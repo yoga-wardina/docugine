@@ -1,0 +1,19 @@
+{
+    "currentPage": 0,
+    "selectedIds": [],
+    "mode": "design",
+    "snapEnabled": true,
+    "snapPixels": 5,
+    "zoom": 1,
+    "showGrid": false,
+    "showGuides": true,
+    "leftPanelWidth": 260,
+    "rightPanelWidth": 520,
+    "initialActiveTab": "home",
+    "sampleData": {
+        "invoiceNumber": "INV-001",
+        "customerName": "Acme Corporation",
+        "customerAddress": "123 Main St\nSpringfield, IL",
+        "total": "$1,250.00"
+    }
+}
