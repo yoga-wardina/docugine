@@ -1,0 +1,45 @@
+# Docugine production deployment
+#
+# Usage:
+#   docker compose up -d --build       # build and start
+#   docker compose down                # stop
+#   docker compose logs -f web         # tail logs
+#   docker compose pull && docker compose up -d   # redeploy after image update
+#
+# The image is built in two stages: Node 20 alpine builds the CRA bundle,
+# then nginx-alpine serves the static files. The container runs as a
+# non-root "app" user and exposes port 80 internally; map to any host port.
+
+name: docugine
+
+services:
+  web:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: docugine:latest
+    container_name: docugine-web
+    restart: unless-stopped
+    ports:
+      - "${DOCUGINE_PORT:-8080}:80"
+    environment:
+      - NODE_ENV=production
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost/"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+    deploy:
+      resources:
+        limits:
+          cpus: "0.50"
+          memory: 256M
+        reservations:
+          cpus: "0.10"
+          memory: 32M
