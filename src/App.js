@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useReducer, useRef, useState } from 'react';
 import {
   defaultDocument,
   defaultLayout,
@@ -7,52 +7,179 @@ import {
   newSignatureTemplate,
   newWatermarkElement,
   importDocument,
-  exportDocument,
   MM_TO_PX,
 } from './lib/document';
 import { TEMPLATES } from './lib/templates';
+import {
+  createHistory,
+  loadHistory,
+  saveHistory,
+  restoreHistory,
+} from './lib/history';
+import {
+  saveCurrent,
+  loadCurrent,
+  saveSession,
+  loadSession,
+  listSessions,
+  deleteSession,
+  renameSession,
+  defaultSessionName,
+} from './lib/session';
 import DesignCanvas from './components/DesignCanvas';
 import ElementList from './components/ElementList';
 import PropertyPanel from './components/PropertyPanel';
 import DataPanel from './components/DataPanel';
 import JsonPanel from './components/JsonPanel';
 import PagePanel from './components/PagePanel';
+import SessionPanel from './components/SessionPanel';
 import Toolbar from './components/Toolbar';
 import defaults from './config/defaults.json';
 
-const STORAGE_KEY = 'docugine:template';
+const LEGACY_STORAGE_KEY = 'docugine:template';
 
 function loadInitialDoc() {
-  try {
-    const saved = localStorage.getItem(STORAGE_KEY);
-    if (saved) {
-      return importDocument(saved);
+  const current = loadCurrent();
+  if (current) {
+    try {
+      return importDocument(JSON.stringify(current));
+    } catch {
     }
+  }
+  try {
+    const legacy = localStorage.getItem(LEGACY_STORAGE_KEY);
+    if (legacy) return importDocument(legacy);
   } catch {
-    // ignore broken storage
   }
   return defaultDocument();
+}
+
+function isEditableTarget(target) {
+  if (!target) return false;
+  const tag = target.tagName?.toLowerCase();
+  if (tag === 'input' || tag === 'textarea' || tag === 'select') return true;
+  if (target.isContentEditable) return true;
+  return false;
 }
 
 function App() {
   const [doc, setDoc] = useState(loadInitialDoc);
   const [currentPage, setCurrentPage] = useState(defaults.currentPage);
   const [selectedIds, setSelectedIds] = useState(defaults.selectedIds);
-  const [mode, setMode] = useState(defaults.mode); // 'design' | 'merge' | 'json'
+  const [mode, setMode] = useState(defaults.mode);
   const [data, setData] = useState(() => ({
     ...defaults.sampleData,
     date: new Date().toISOString().split('T')[0],
   }));
-  const [snapEnabled, setSnapEnabled] = useState(defaults.snapEnabled);
-  const [snapPixels, setSnapPixels] = useState(defaults.snapPixels);
+  const [snapEnabled, setSnapEnabled] = useState(defaults.snap.enabled);
+  const [snapPixels, setSnapPixels] = useState(defaults.snap.pixels);
   const snapMm = snapEnabled ? snapPixels / MM_TO_PX : 0;
   const [zoom, setZoom] = useState(defaults.zoom);
   const [editingId, setEditingId] = useState(null);
   const quillRef = useRef(null);
-  const [leftWidth, setLeftWidth] = useState(defaults.leftPanelWidth);
-  const [rightWidth, setRightWidth] = useState(defaults.rightPanelWidth);
-  const [showGuides, setShowGuides] = useState(defaults.showGuides);
-  const [showGrid, setShowGrid] = useState(defaults.showGrid);
+  const [leftWidth, setLeftWidth] = useState(defaults.panels.left.width);
+  const [rightWidth, setRightWidth] = useState(defaults.panels.right.width);
+  const [showGuides, setShowGuides] = useState(defaults.view.showGuides);
+  const [showGrid, setShowGrid] = useState(defaults.view.showGrid);
+  const [sessions, setSessions] = useState(() => listSessions());
+
+  const historyRef = useRef(null);
+  const applyingHistoryRef = useRef(false);
+  const [, forceHistoryUpdate] = useReducer((x) => x + 1, 0);
+
+  if (!historyRef.current) {
+    const initial = loadInitialDoc();
+    historyRef.current = loadHistory(initial, {
+      maxNodes: defaults.history.maxNodes,
+    });
+  }
+  const history = historyRef.current;
+
+  const bumpHistory = useCallback(() => {
+    forceHistoryUpdate();
+  }, []);
+
+  const doUndo = useCallback(() => {
+    const h = historyRef.current;
+    if (!h || !h.canUndo()) return;
+    const prev = h.undo();
+    if (prev) {
+      applyingHistoryRef.current = true;
+      setDoc(prev);
+      saveHistory(h);
+      bumpHistory();
+      Promise.resolve().then(() => {
+        applyingHistoryRef.current = false;
+      });
+    }
+  }, [bumpHistory]);
+
+  const doRedo = useCallback(() => {
+    const h = historyRef.current;
+    if (!h || !h.canRedo()) return;
+    const next = h.redo();
+    if (next) {
+      applyingHistoryRef.current = true;
+      setDoc(next);
+      saveHistory(h);
+      bumpHistory();
+      Promise.resolve().then(() => {
+        applyingHistoryRef.current = false;
+      });
+    }
+  }, [bumpHistory]);
+
+  const doSaveSnapshot = useCallback(
+    (name) => {
+      const entry = saveSession(
+        doc,
+        name || defaultSessionName(),
+        historyRef.current,
+        defaults.session.maxSessions
+      );
+      setSessions(listSessions());
+      return entry;
+    },
+    [doc]
+  );
+
+  const doLoadSnapshot = useCallback(
+    (id) => {
+      const session = loadSession(id);
+      if (!session) return;
+      const restored = session.history
+        ? restoreHistory(session.history, { maxNodes: defaults.history.maxNodes })
+        : null;
+      applyingHistoryRef.current = true;
+      setDoc(session.doc);
+      if (restored) {
+        historyRef.current = restored;
+      } else {
+        historyRef.current = createHistory(session.doc, {
+          maxNodes: defaults.history.maxNodes,
+        });
+      }
+      saveHistory(historyRef.current);
+      setCurrentPage(0);
+      setSelectedIds([]);
+      setEditingId(null);
+      bumpHistory();
+      Promise.resolve().then(() => {
+        applyingHistoryRef.current = false;
+      });
+    },
+    [bumpHistory]
+  );
+
+  const doDeleteSnapshot = useCallback((id) => {
+    deleteSession(id);
+    setSessions(listSessions());
+  }, []);
+
+  const doRenameSnapshot = useCallback((id, name) => {
+    renameSession(id, name);
+    setSessions(listSessions());
+  }, []);
 
   const pageDoc = doc.pages[currentPage];
 
@@ -101,12 +228,49 @@ function App() {
     setEditingId(null);
   }, [currentPage]);
 
+  useEffect(() => {
+    if (!editingId) return;
+    const exists = doc.pages.some((p) =>
+      p.elements.some((el) => el.id === editingId)
+    );
+    if (!exists) setEditingId(null);
+  }, [doc, editingId]);
+
+  useEffect(() => {
+    if (applyingHistoryRef.current) return;
+    const handle = setTimeout(() => {
+      const node = history.commit(doc, 'Edit');
+      if (node) {
+        saveHistory(history);
+        bumpHistory();
+      }
+    }, defaults.history.commitDebounceMs);
+    return () => clearTimeout(handle);
+  }, [doc, history, bumpHistory]);
+
+  useEffect(() => {
+    saveCurrent(doc);
+  }, [doc]);
+
+  useEffect(() => {
+    if (!defaults.session.autoSaveEnabled) return;
+    const handle = setInterval(() => {
+      saveCurrent(doc);
+      saveHistory(history);
+    }, defaults.session.autoSaveIntervalMs);
+    return () => clearInterval(handle);
+  }, [doc, history]);
+
   function updateLeftWidth(dx) {
-    setLeftWidth((w) => Math.max(180, Math.min(600, w + dx)));
+    setLeftWidth((w) =>
+      Math.max(defaults.panels.left.min, Math.min(defaults.panels.left.max, w + dx))
+    );
   }
 
   function updateRightWidth(dx) {
-    setRightWidth((w) => Math.max(220, Math.min(800, w - dx)));
+    setRightWidth((w) =>
+      Math.max(defaults.panels.right.min, Math.min(defaults.panels.right.max, w - dx))
+    );
   }
 
   function Resizer({ onDelta }) {
@@ -147,14 +311,6 @@ function App() {
   }, [editingId, stopEditing]);
 
   useEffect(() => {
-    try {
-      localStorage.setItem(STORAGE_KEY, exportDocument(doc));
-    } catch {
-      // ignore storage errors
-    }
-  }, [doc]);
-
-  useEffect(() => {
     if (currentPage >= doc.pages.length) {
       setCurrentPage(Math.max(0, doc.pages.length - 1));
       setSelectedIds([]);
@@ -163,8 +319,28 @@ function App() {
 
   useEffect(() => {
     function handleKeyDown(e) {
-      const tag = e.target?.tagName?.toLowerCase();
-      if (tag === 'input' || tag === 'textarea' || tag === 'select') return;
+      if (isEditableTarget(e.target)) return;
+
+      const mod = e.ctrlKey || e.metaKey;
+      if (mod && !e.shiftKey && (e.key === 'z' || e.key === 'Z')) {
+        e.preventDefault();
+        doUndo();
+        return;
+      }
+      if (
+        mod &&
+        ((e.shiftKey && (e.key === 'z' || e.key === 'Z')) ||
+          (!e.shiftKey && (e.key === 'y' || e.key === 'Y')))
+      ) {
+        e.preventDefault();
+        doRedo();
+        return;
+      }
+      if (mod && (e.key === 's' || e.key === 'S')) {
+        e.preventDefault();
+        doSaveSnapshot();
+        return;
+      }
 
       if (e.key === 'Delete' || e.key === 'Backspace') {
         if (selectedIds.length > 0) {
@@ -187,7 +363,7 @@ function App() {
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [selectedIds, currentPage]);
+  }, [selectedIds, currentPage, doUndo, doRedo, doSaveSnapshot]);
 
   function nextOffset() {
     return 20 + (pageDoc.elements.length % 5) * 5;
@@ -231,9 +407,9 @@ function App() {
         ...prev.pages,
         {
           page: {
-            width: 210,
-            height: 297,
-            unit: 'mm',
+            width: defaults.canvas.pageWidth,
+            height: defaults.canvas.pageHeight,
+            unit: defaults.canvas.pageUnit,
             layout: defaultLayout(),
           },
           elements: [],
@@ -274,10 +450,20 @@ function App() {
 
   function resetTemplate() {
     if (window.confirm('Reset to the default template?')) {
-      setDoc(defaultDocument());
+      const fresh = defaultDocument();
+      applyingHistoryRef.current = true;
+      setDoc(fresh);
+      historyRef.current = createHistory(fresh, {
+        maxNodes: defaults.history.maxNodes,
+      });
+      saveHistory(historyRef.current);
       setCurrentPage(0);
       setSelectedIds([]);
       setZoom(1);
+      bumpHistory();
+      Promise.resolve().then(() => {
+        applyingHistoryRef.current = false;
+      });
     }
   }
 
@@ -288,6 +474,9 @@ function App() {
         setMode={setMode}
         zoom={zoom}
         setZoom={setZoom}
+        zoomMin={defaults.zoomMin}
+        zoomMax={defaults.zoomMax}
+        zoomStep={defaults.zoomStep}
         snapEnabled={snapEnabled}
         setSnapEnabled={setSnapEnabled}
         snapPixels={snapPixels}
@@ -311,6 +500,12 @@ function App() {
         templates={TEMPLATES}
         onLoadTemplate={loadTemplate}
         onReset={resetTemplate}
+        onUndo={doUndo}
+        onRedo={doRedo}
+        canUndo={history.canUndo()}
+        canRedo={history.canRedo()}
+        onSaveSnapshot={() => doSaveSnapshot()}
+        onLoadSnapshot={doLoadSnapshot}
         editingId={editingId}
         selectedIds={selectedIds}
         quillRef={quillRef}
@@ -363,6 +558,18 @@ function App() {
           className="flex-shrink-0 bg-brand-surface border-l border-gray-200 overflow-y-auto p-3"
           style={{ width: rightWidth }}
         >
+          <SessionPanel
+            sessions={sessions}
+            canUndo={history.canUndo()}
+            canRedo={history.canRedo()}
+            onUndo={doUndo}
+            onRedo={doRedo}
+            onSave={() => doSaveSnapshot()}
+            onLoad={doLoadSnapshot}
+            onDelete={doDeleteSnapshot}
+            onRename={doRenameSnapshot}
+            historyDepth={history.size()}
+          />
           {mode === 'design' && (
             <>
               <PropertyPanel

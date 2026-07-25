@@ -19,6 +19,9 @@ import {
   RotateCcw,
   FileText,
   Type,
+  Undo2,
+  Redo2,
+  Camera,
 } from 'lucide-react';
 import {
   StylingButtons,
@@ -118,6 +121,9 @@ function HomeTab({
   pageCount,
   zoom,
   setZoom,
+  zoomMin,
+  zoomMax,
+  zoomStep,
   snapEnabled,
   setSnapEnabled,
   snapPixels,
@@ -128,7 +134,15 @@ function HomeTab({
   setShowGrid,
   templates,
   onLoadTemplate,
+  onUndo,
+  onRedo,
+  canUndo,
+  canRedo,
+  onSaveSnapshot,
 }) {
+  const zMin = zoomMin ?? 0.1;
+  const zMax = zoomMax ?? 5;
+  const zStep = zoomStep ?? 1.2;
   return (
     <>
       <Group title="Document">
@@ -160,12 +174,40 @@ function HomeTab({
           <Minus {...ico} />
         </button>
       </Group>
+      <Group title="History">
+        <button
+          type="button"
+          className={ribbonBtn}
+          onClick={onUndo}
+          disabled={!canUndo}
+          title="Undo (Ctrl+Z)"
+        >
+          <Undo2 {...ico} />
+        </button>
+        <button
+          type="button"
+          className={ribbonBtn}
+          onClick={onRedo}
+          disabled={!canRedo}
+          title="Redo (Ctrl+Shift+Z)"
+        >
+          <Redo2 {...ico} />
+        </button>
+        <button
+          type="button"
+          className={`${ribbonBtn} bg-brand-accent text-white hover:bg-brand-accentDark`}
+          onClick={onSaveSnapshot}
+          title="Save snapshot (Ctrl+S)"
+        >
+          <Camera {...ico} /> Snapshot
+        </button>
+      </Group>
       <Group title="Zoom">
-        <button type="button" className={ribbonBtn} onClick={() => setZoom((z) => Math.max(0.1, z / 1.2))} title="Zoom out">
+        <button type="button" className={ribbonBtn} onClick={() => setZoom((z) => Math.max(zMin, z / zStep))} title="Zoom out">
           <ZoomOut {...ico} />
         </button>
         <span className="text-sm min-w-[36px] text-center text-gray-900">{Math.round(zoom * 100)}%</span>
-        <button type="button" className={ribbonBtn} onClick={() => setZoom((z) => Math.min(5, z * 1.2))} title="Zoom in">
+        <button type="button" className={ribbonBtn} onClick={() => setZoom((z) => Math.min(zMax, z * zStep))} title="Zoom in">
           <ZoomIn {...ico} />
         </button>
         <button type="button" className={ribbonBtn} onClick={() => setZoom(1)} title="Fit to window">
@@ -326,6 +368,9 @@ function InsertTab({
 function ViewTab({
   zoom,
   setZoom,
+  zoomMin,
+  zoomMax,
+  zoomStep,
   snapEnabled,
   setSnapEnabled,
   snapPixels,
@@ -337,14 +382,17 @@ function ViewTab({
   showGrid,
   setShowGrid,
 }) {
+  const zMin = zoomMin ?? 0.1;
+  const zMax = zoomMax ?? 5;
+  const zStep = zoomStep ?? 1.2;
   return (
     <>
       <Group title="Zoom">
-        <button type="button" className={ribbonBtn} onClick={() => setZoom((z) => Math.max(0.1, z / 1.2))} title="Zoom out">
+        <button type="button" className={ribbonBtn} onClick={() => setZoom((z) => Math.max(zMin, z / zStep))} title="Zoom out">
           <ZoomOut {...ico} />
         </button>
         <span className="text-sm min-w-[36px] text-center text-gray-900">{Math.round(zoom * 100)}%</span>
-        <button type="button" className={ribbonBtn} onClick={() => setZoom((z) => Math.min(5, z * 1.2))} title="Zoom in">
+        <button type="button" className={ribbonBtn} onClick={() => setZoom((z) => Math.min(zMax, z * zStep))} title="Zoom in">
           <ZoomIn {...ico} />
         </button>
         <button type="button" className={ribbonBtn} onClick={() => setZoom(1)} title="Fit to window">

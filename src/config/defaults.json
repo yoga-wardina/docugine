@@ -2,14 +2,181 @@
     "currentPage": 0,
     "selectedIds": [],
     "mode": "design",
-    "snapEnabled": true,
-    "snapPixels": 5,
-    "zoom": 1,
-    "showGrid": false,
-    "showGuides": true,
-    "leftPanelWidth": 260,
-    "rightPanelWidth": 520,
     "initialActiveTab": "home",
+    "snap": {
+        "enabled": true,
+        "pixels": 5
+    },
+    "zoom": 1,
+    "zoomMin": 0.1,
+    "zoomMax": 5,
+    "zoomStep": 1.2,
+    "view": {
+        "showGrid": false,
+        "showGuides": true,
+        "showRulers": false
+    },
+    "panels": {
+        "left": {
+            "width": 260,
+            "min": 180,
+            "max": 600
+        },
+        "right": {
+            "width": 520,
+            "min": 220,
+            "max": 800
+        }
+    },
+    "history": {
+        "maxNodes": 200,
+        "maxDepth": 50,
+        "commitDebounceMs": 250,
+        "autoSaveMs": 1500
+    },
+    "session": {
+        "autoSaveEnabled": true,
+        "autoSaveIntervalMs": 30000,
+        "maxSessions": 10,
+        "defaultNameFormat": "Snapshot {date}",
+        "retainCurrentOnLoad": true
+    },
+    "keyboard": {
+        "undo": "ctrl+z",
+        "redo": "ctrl+shift+z",
+        "redoAlt": "ctrl+y",
+        "delete": ["delete", "backspace"],
+        "escape": "escape",
+        "edit": "enter",
+        "saveSnapshot": "ctrl+s"
+    },
+    "editor": {
+        "quill": {
+            "sizeWhitelist": [
+                "8px",
+                "9px",
+                "10px",
+                "11px",
+                "12px",
+                "14px",
+                "16px",
+                "18px",
+                "20px",
+                "22px",
+                "24px",
+                "28px",
+                "32px"
+            ]
+        }
+    },
+    "canvas": {
+        "pageWidth": 210,
+        "pageHeight": 297,
+        "pageUnit": "mm",
+        "mmToPx": 3.7795275590551185,
+        "defaultBackground": "#ffffff"
+    },
+    "elements": {
+        "default": {
+            "text": {
+                "width": 80,
+                "height": 12,
+                "content": "{{tag}}",
+                "style": {
+                    "fontSize": 11,
+                    "color": "#111827",
+                    "textAlign": "left",
+                    "fontFamily": "Arial, sans-serif",
+                    "whiteSpace": "pre-wrap"
+                }
+            },
+            "rect": {
+                "width": 60,
+                "height": 40,
+                "style": {
+                    "backgroundColor": "#f3f4f6",
+                    "borderColor": "#9ca3af",
+                    "borderWidth": 1,
+                    "borderStyle": "solid"
+                }
+            },
+            "image": {
+                "width": 50,
+                "height": 50,
+                "content": "https://via.placeholder.com/200"
+            },
+            "line": {
+                "width": 80,
+                "height": 1,
+                "style": {
+                    "lineColor": "#111827",
+                    "rotation": 0
+                }
+            },
+            "watermark": {
+                "width": 100,
+                "height": 100,
+                "content": "https://via.placeholder.com/400",
+                "style": {
+                    "opacity": 0.15,
+                    "objectFit": "cover"
+                }
+            }
+        },
+        "heading": {
+            "width": 170,
+            "height": 16,
+            "content": "Heading",
+            "style": {
+                "fontSize": 20,
+                "fontWeight": "bold",
+                "color": "#111827",
+                "textAlign": "left",
+                "fontFamily": "Arial, sans-serif"
+            }
+        },
+        "signature": {
+            "label": {
+                "width": 70,
+                "height": 8,
+                "content": "Signature",
+                "style": {
+                    "fontSize": 10,
+                    "color": "#6b7280",
+                    "textAlign": "left",
+                    "fontFamily": "Arial, sans-serif"
+                }
+            },
+            "line": {
+                "width": 70,
+                "height": 0.8,
+                "style": {
+                    "lineColor": "#111827",
+                    "rotation": 0
+                }
+            }
+        }
+    },
+    "layout": {
+        "margins": {
+            "top": 20,
+            "right": 20,
+            "bottom": 20,
+            "left": 20
+        },
+        "marginGuideStyle": "dotted",
+        "marginGuideColor": "#94a3b8",
+        "showMargins": true,
+        "strictMargin": false,
+        "snapToMargin": false
+    },
+    "persistence": {
+        "currentKey": "docugine:current",
+        "historyKey": "docugine:history",
+        "sessionsIndexKey": "docugine:sessions",
+        "sessionPrefix": "docugine:session:",
+        "settingsKey": "docugine:settings"
+    },
     "sampleData": {
         "invoiceNumber": "INV-001",
         "customerName": "Acme Corporation",
