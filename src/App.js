@@ -26,6 +26,7 @@ import {
   renameSession,
   defaultSessionName,
 } from './lib/session';
+import { useBreakpoint } from './lib/useBreakpoint';
 import DesignCanvas from './components/DesignCanvas';
 import ElementList from './components/ElementList';
 import PropertyPanel from './components/PropertyPanel';
@@ -82,6 +83,10 @@ function App() {
   const [showGuides, setShowGuides] = useState(defaults.view.showGuides);
   const [showGrid, setShowGrid] = useState(defaults.view.showGrid);
   const [sessions, setSessions] = useState(() => listSessions());
+  const breakpoint = useBreakpoint();
+  const isCompact = breakpoint === 'mobile' || breakpoint === 'tablet';
+  const [leftOpen, setLeftOpen] = useState(false);
+  const [rightOpen, setRightOpen] = useState(false);
 
   const historyRef = useRef(null);
   const applyingHistoryRef = useRef(false);
@@ -318,6 +323,30 @@ function App() {
   }, [doc.pages.length, currentPage]);
 
   useEffect(() => {
+    if (!isCompact) {
+      setLeftOpen(true);
+      setRightOpen(true);
+    } else {
+      setLeftOpen(false);
+      setRightOpen(false);
+    }
+  }, [isCompact]);
+
+  function fitToScreen() {
+    const main = document.getElementById('docugine-canvas-area');
+    if (!main) return;
+    const padding = 32;
+    const available = main.clientWidth - padding;
+    const pageWidthPx = defaults.canvas.pageWidth * MM_TO_PX;
+    if (available <= 0 || pageWidthPx <= 0) return;
+    const next = Math.max(
+      defaults.zoomMin,
+      Math.min(defaults.zoomMax, available / pageWidthPx)
+    );
+    setZoom(next);
+  }
+
+  useEffect(() => {
     function handleKeyDown(e) {
       if (isEditableTarget(e.target)) return;
 
@@ -467,6 +496,47 @@ function App() {
     }
   }
 
+  function renderRightPanel() {
+    return (
+      <>
+        <SessionPanel
+          sessions={sessions}
+          canUndo={history.canUndo()}
+          canRedo={history.canRedo()}
+          onUndo={doUndo}
+          onRedo={doRedo}
+          onSave={() => doSaveSnapshot()}
+          onLoad={doLoadSnapshot}
+          onDelete={doDeleteSnapshot}
+          onRename={doRenameSnapshot}
+          historyDepth={history.size()}
+        />
+        {mode === 'design' && (
+          <>
+            <PropertyPanel
+              doc={pageDoc}
+              setDoc={setPageDoc}
+              selectedIds={selectedIds}
+              setSelectedIds={setSelectedIds}
+              editingId={editingId}
+              quillRef={quillRef}
+            />
+            <PagePanel
+              doc={pageDoc}
+              setDoc={setPageDoc}
+              selectedIds={selectedIds}
+              setSelectedIds={setSelectedIds}
+            />
+          </>
+        )}
+        {mode === 'merge' && (
+          <DataPanel doc={doc} data={data} setData={setData} />
+        )}
+        {mode === 'json' && <JsonPanel doc={doc} setDoc={setDoc} />}
+      </>
+    );
+  }
+
   return (
     <div className="flex flex-col h-screen overflow-hidden bg-brand-surfaceAlt font-sans">
       <Toolbar
@@ -515,24 +585,35 @@ function App() {
         showGrid={showGrid}
         setShowGrid={setShowGrid}
         initialActiveTab={defaults.initialActiveTab}
+        isCompact={isCompact}
+        leftOpen={leftOpen}
+        rightOpen={rightOpen}
+        onToggleLeft={() => setLeftOpen((v) => !v)}
+        onToggleRight={() => setRightOpen((v) => !v)}
+        onFitToScreen={fitToScreen}
       />
 
-      <main className="flex-1 flex overflow-hidden">
-        <aside
-          className="flex-shrink-0 bg-brand-surface border-r border-gray-200 overflow-y-auto p-3"
-          style={{ width: leftWidth }}
+      <main className="flex-1 flex overflow-hidden relative">
+        {!isCompact && leftOpen && (
+          <aside
+            className="flex-shrink-0 bg-brand-surface border-r border-gray-200 overflow-y-auto p-3"
+            style={{ width: leftWidth }}
+          >
+            <ElementList
+              doc={pageDoc}
+              setDoc={setPageDoc}
+              selectedIds={selectedIds}
+              setSelectedIds={setSelectedIds}
+            />
+          </aside>
+        )}
+
+        {!isCompact && leftOpen && <Resizer onDelta={updateLeftWidth} />}
+
+        <section
+          id="docugine-canvas-area"
+          className="flex-1 min-w-0 bg-gray-200 overflow-auto p-4"
         >
-          <ElementList
-            doc={pageDoc}
-            setDoc={setPageDoc}
-            selectedIds={selectedIds}
-            setSelectedIds={setSelectedIds}
-          />
-        </aside>
-
-        <Resizer onDelta={updateLeftWidth} />
-
-        <section className="flex-1 min-w-0 bg-gray-200 overflow-auto p-4">
           <DesignCanvas
             doc={pageDoc}
             setDoc={setPageDoc}
@@ -552,47 +633,49 @@ function App() {
           />
         </section>
 
-        <Resizer onDelta={updateRightWidth} />
+        {!isCompact && rightOpen && <Resizer onDelta={updateRightWidth} />}
 
-        <aside
-          className="flex-shrink-0 bg-brand-surface border-l border-gray-200 overflow-y-auto p-3"
-          style={{ width: rightWidth }}
-        >
-          <SessionPanel
-            sessions={sessions}
-            canUndo={history.canUndo()}
-            canRedo={history.canRedo()}
-            onUndo={doUndo}
-            onRedo={doRedo}
-            onSave={() => doSaveSnapshot()}
-            onLoad={doLoadSnapshot}
-            onDelete={doDeleteSnapshot}
-            onRename={doRenameSnapshot}
-            historyDepth={history.size()}
+        {!isCompact && rightOpen && (
+          <aside
+            className="flex-shrink-0 bg-brand-surface border-l border-gray-200 overflow-y-auto p-3"
+            style={{ width: rightWidth }}
+          >
+            {renderRightPanel()}
+          </aside>
+        )}
+
+        {isCompact && (leftOpen || rightOpen) && (
+          <div
+            className="absolute inset-0 bg-black/30 z-10"
+            onClick={() => {
+              setLeftOpen(false);
+              setRightOpen(false);
+            }}
           />
-          {mode === 'design' && (
-            <>
-              <PropertyPanel
-                doc={pageDoc}
-                setDoc={setPageDoc}
-                selectedIds={selectedIds}
-                setSelectedIds={setSelectedIds}
-                editingId={editingId}
-                quillRef={quillRef}
-              />
-              <PagePanel
-                doc={pageDoc}
-                setDoc={setPageDoc}
-                selectedIds={selectedIds}
-                setSelectedIds={setSelectedIds}
-              />
-            </>
-          )}
-          {mode === 'merge' && (
-            <DataPanel doc={doc} data={data} setData={setData} />
-          )}
-          {mode === 'json' && <JsonPanel doc={doc} setDoc={setDoc} />}
-        </aside>
+        )}
+
+        {isCompact && leftOpen && (
+          <aside
+            className="absolute top-0 left-0 bottom-0 z-20 bg-brand-surface border-r border-gray-200 overflow-y-auto p-3 shadow-lg"
+            style={{ width: Math.min(280, typeof window !== 'undefined' ? window.innerWidth * 0.85 : 280) }}
+          >
+            <ElementList
+              doc={pageDoc}
+              setDoc={setPageDoc}
+              selectedIds={selectedIds}
+              setSelectedIds={setSelectedIds}
+            />
+          </aside>
+        )}
+
+        {isCompact && rightOpen && (
+          <aside
+            className="absolute top-0 right-0 bottom-0 z-20 bg-brand-surface border-l border-gray-200 overflow-y-auto p-3 shadow-lg"
+            style={{ width: Math.min(360, typeof window !== 'undefined' ? window.innerWidth * 0.9 : 360) }}
+          >
+            {renderRightPanel()}
+          </aside>
+        )}
       </main>
     </div>
   );

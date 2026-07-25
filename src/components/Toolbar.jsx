@@ -22,6 +22,9 @@ import {
   Undo2,
   Redo2,
   Camera,
+  PanelRight,
+  ScanLine,
+  Menu,
 } from 'lucide-react';
 import {
   StylingButtons,
@@ -78,26 +81,50 @@ export default function Toolbar(props) {
 
   return (
     <div className="bg-brand-surfaceAlt text-gray-900 border-b border-gray-300 flex-shrink-0">
-      <div className="flex items-center gap-3 px-3.5 py-1.5 bg-white border-b border-gray-200">
-        <div className="flex items-baseline gap-2 min-w-[160px]">
-          <strong className="text-lg font-bold text-gray-900">Docugine</strong>
-          <span className="text-gray-500 text-sm">A4 templating</span>
+      <div className="flex items-center gap-2 sm:gap-3 px-2 sm:px-3.5 py-1.5 bg-white border-b border-gray-200">
+        <div className="flex items-center gap-1 sm:gap-2 min-w-0">
+          {props.isCompact && (
+            <button
+              type="button"
+              className="p-1.5 rounded hover:bg-gray-100"
+              onClick={props.onToggleLeft}
+              title="Toggle layers panel"
+              aria-label="Toggle layers panel"
+            >
+              <Menu {...ico} />
+            </button>
+          )}
+          <div className="flex items-baseline gap-1 sm:gap-2 min-w-0">
+            <strong className="text-base sm:text-lg font-bold text-gray-900 whitespace-nowrap">Docugine</strong>
+            <span className="hidden sm:inline text-gray-500 text-sm whitespace-nowrap">A4 templating</span>
+          </div>
         </div>
-        <div className="flex gap-0.5 flex-1">
+        <div className="flex gap-0.5 flex-1 overflow-x-auto">
           {tabs.map((t) => (
             <button
               key={t.id}
               type="button"
-              className={`${tabBtn} ${activeTab === t.id ? tabBtnActive : ''}`}
+              className={`${tabBtn} ${activeTab === t.id ? tabBtnActive : ''} whitespace-nowrap`}
               onClick={() => setActiveTab(t.id)}
             >
               {t.label}
             </button>
           ))}
         </div>
-        <div>
-          <button type="button" className={`${dangerBtn} inline-flex items-center gap-1`} onClick={onReset}>
-            <RotateCcw {...ico} /> Reset
+        <div className="flex items-center gap-1">
+          {props.isCompact && (
+            <button
+              type="button"
+              className={`p-1.5 rounded hover:bg-gray-100 ${props.rightOpen ? 'bg-gray-100' : ''}`}
+              onClick={props.onToggleRight}
+              title="Toggle properties panel"
+              aria-label="Toggle properties panel"
+            >
+              <PanelRight {...ico} />
+            </button>
+          )}
+          <button type="button" className={`${dangerBtn} inline-flex items-center gap-1 text-xs sm:text-sm px-2 sm:px-3`} onClick={onReset}>
+            <RotateCcw {...ico} /> <span className="hidden sm:inline">Reset</span>
           </button>
         </div>
       </div>
@@ -139,6 +166,7 @@ function HomeTab({
   canUndo,
   canRedo,
   onSaveSnapshot,
+  onFitToScreen,
 }) {
   const zMin = zoomMin ?? 0.1;
   const zMax = zoomMax ?? 5;
@@ -210,9 +238,14 @@ function HomeTab({
         <button type="button" className={ribbonBtn} onClick={() => setZoom((z) => Math.min(zMax, z * zStep))} title="Zoom in">
           <ZoomIn {...ico} />
         </button>
-        <button type="button" className={ribbonBtn} onClick={() => setZoom(1)} title="Fit to window">
+        <button type="button" className={ribbonBtn} onClick={() => setZoom(1)} title="Reset to 100%">
           <Maximize2 {...ico} />
         </button>
+        {onFitToScreen && (
+          <button type="button" className={ribbonBtn} onClick={onFitToScreen} title="Fit page to screen">
+            <ScanLine {...ico} />
+          </button>
+        )}
       </Group>
       <Group title="Snap">
         <label className="flex items-center gap-1.5 text-sm text-gray-900 cursor-pointer">
@@ -222,7 +255,7 @@ function HomeTab({
             checked={snapEnabled}
             onChange={(e) => setSnapEnabled(e.target.checked)}
           />
-          <Pencil {...ico} /> Snap
+          <Pencil {...ico} /> <span className="hidden md:inline">Snap</span>
         </label>
         <input
           className="w-[50px] border border-gray-300 rounded px-1.5 py-0.5 text-sm"
@@ -232,7 +265,7 @@ function HomeTab({
           value={snapPixels}
           onChange={(e) => setSnapPixels(Math.max(1, parseInt(e.target.value, 10) || 1))}
         />
-        <span className="text-xs text-gray-500">px</span>
+        <span className="text-xs text-gray-500 hidden sm:inline">px</span>
         <label className="flex items-center gap-1.5 text-sm text-gray-900 cursor-pointer">
           <input
             type="checkbox"
@@ -240,7 +273,7 @@ function HomeTab({
             checked={showGrid}
             onChange={(e) => setShowGrid(e.target.checked)}
           />
-          <Grid3x3 {...ico} /> Grid
+          <Grid3x3 {...ico} /> <span className="hidden md:inline">Grid</span>
         </label>
       </Group>
       <Group title="Mode">
@@ -381,6 +414,7 @@ function ViewTab({
   setShowGuides,
   showGrid,
   setShowGrid,
+  onFitToScreen,
 }) {
   const zMin = zoomMin ?? 0.1;
   const zMax = zoomMax ?? 5;
@@ -395,9 +429,14 @@ function ViewTab({
         <button type="button" className={ribbonBtn} onClick={() => setZoom((z) => Math.min(zMax, z * zStep))} title="Zoom in">
           <ZoomIn {...ico} />
         </button>
-        <button type="button" className={ribbonBtn} onClick={() => setZoom(1)} title="Fit to window">
+        <button type="button" className={ribbonBtn} onClick={() => setZoom(1)} title="Reset to 100%">
           <Maximize2 {...ico} />
         </button>
+        {onFitToScreen && (
+          <button type="button" className={ribbonBtn} onClick={onFitToScreen} title="Fit page to screen">
+            <ScanLine {...ico} />
+          </button>
+        )}
       </Group>
       <Group title="Snap">
         <label className="flex items-center gap-1.5 text-sm text-gray-900 cursor-pointer">
@@ -407,7 +446,7 @@ function ViewTab({
             checked={snapEnabled}
             onChange={(e) => setSnapEnabled(e.target.checked)}
           />
-          <Pencil {...ico} /> Snap
+          <Pencil {...ico} /> <span className="hidden md:inline">Snap</span>
         </label>
         <input
           className="w-[50px] border border-gray-300 rounded px-1.5 py-0.5 text-sm"
@@ -417,7 +456,7 @@ function ViewTab({
           value={snapPixels}
           onChange={(e) => setSnapPixels(Math.max(1, parseInt(e.target.value, 10) || 1))}
         />
-        <span className="text-xs text-gray-500">px</span>
+        <span className="text-xs text-gray-500 hidden sm:inline">px</span>
         <label className="flex items-center gap-1.5 text-sm text-gray-900 cursor-pointer">
           <input
             type="checkbox"
@@ -425,7 +464,7 @@ function ViewTab({
             checked={showGrid}
             onChange={(e) => setShowGrid(e.target.checked)}
           />
-          <Grid3x3 {...ico} /> Grid
+          <Grid3x3 {...ico} /> <span className="hidden md:inline">Grid</span>
         </label>
       </Group>
       <Group title="Mode">

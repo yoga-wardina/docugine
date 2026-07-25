@@ -47,7 +47,8 @@ No TypeScript. JSX files use `.jsx`; plain modules use `.js`. Config files are J
 │   │   ├── history.js         # Undo-tree (branches on undo+edit)
 │   │   ├── session.js         # localStorage current/history/sessions/settings
 │   │   ├── templates.js       # Prebuilt template factories
-│   │   └── colors.js          # Deterministic layer color
+│   │   ├── colors.js          # Deterministic layer color
+│   │   └── useBreakpoint.js   # Responsive breakpoint hook
 │   └── config/
 │       └── defaults.json      # Initial UI state (panel widths, sample data, history & session tuning, etc.)
 ├── tailwind.config.js
@@ -159,10 +160,15 @@ All state is local to `App.js`:
 ```
 doc, currentPage, selectedIds, mode,
 data, snapEnabled, snapPixels, zoom,
-editingId, leftWidth, rightWidth, showGuides, showGrid, sessions
+editingId, leftWidth, rightWidth, showGuides, showGrid, sessions,
+leftOpen, rightOpen
 ```
 
 Initial values come from `src/config/defaults.json` (the `sampleData` keys are merged with `date: <today>`).
+
+### Responsive layout
+
+`src/lib/useBreakpoint.js` returns one of `mobile` (<640px) / `tablet` (640-1023) / `desktop` (1024-1279) / `wide` (≥1280). The compact modes (`mobile` and `tablet`) collapse the side panels into overlay drawers with a backdrop; toolbar shows hamburger and panel toggle buttons. Desktop/wide keeps the resizable three-column layout. `App.js` derives `isCompact` from this and forces `leftOpen`/`rightOpen` accordingly. The Home and View tabs include a "Fit to screen" button (the `ScanLine` icon) that picks a zoom that fits the page width.
 
 Persistence (`src/lib/session.js`, `src/lib/history.js`):
 
@@ -246,3 +252,4 @@ There is no lint script beyond CRA's built-in ESLint (`react-app` config). `npm 
 - Watermarks are global-per-page; multi-watermark pages are stored but the UI manages only the first one.
 - Undo/redo: tree is pruned by node count, not by age or size; very large docs may lose older siblings first.
 - Sessions live entirely in `localStorage` — clearing browser data wipes both current and snapshots (see `DATA-STRUCTURE.md` for the server-side plan).
+- Responsive layout: sub-640px screens are usable but cramped. A4 at default zoom is wider than a phone, so the "Fit to screen" button (`ScanLine` icon, Home and View tabs) is the recommended way to enter edit mode on mobile.
