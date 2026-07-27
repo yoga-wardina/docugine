@@ -72,6 +72,8 @@ type Page = {
     height: number;  // mm (default 297)
     unit: 'mm';
     layout: PageLayout;
+    header: PageBand; // page header (see §4a)
+    footer: PageBand; // page footer (see §4a)
   };
   elements: Element[];
 };
@@ -83,6 +85,13 @@ type PageLayout = {
   showMargins: boolean;
   strictMargin: boolean;      // added by normalize, default false
   snapToMargin: boolean;      // added by normalize, default false
+};
+
+type PageBand = {
+  enabled: boolean;
+  height: number;   // mm
+  content: string;  // plain text shown in the band
+  style: Record<string, unknown>;
 };
 
 type Element = {
@@ -101,6 +110,8 @@ Key invariants:
 - `Element.id` is unique within the document and used for selection (`selectedIds`), keys, and React lists.
 - `Element.content` for `text` may contain `{{tag}}` placeholders. `mergeTags(content, data)` performs substitution; unknown tags become `''`.
 - `watermark` is a special image-like element rendered on top of all pages with low opacity.
+- `page.header` and `page.footer` are **page-level bands** (not elements). When enabled, they reserve `height` mm at the top/bottom of the page; `PageTab` clamps the top/bottom margin to be ≥ the band height, and `DesignCanvas` excludes the band area from the strict-margin content region (same behavior as the existing strict-margin clamp).
+- **Page-level settings are document-wide.** Layout, header, footer, and watermark are shared across all pages of a document: changes from the *Page* tab (or the Insert → Watermark button) are applied to every page through `setAllPagesDoc`, and a new page created via *Add page* inherits the current page's layout, header, footer, and watermark. The remaining elements (text, rect, image, line) stay per-page.
 
 ### Document lifecycle helpers (in `src/lib/document.js`)
 
@@ -108,6 +119,8 @@ Key invariants:
 | ------ | ------- |
 | `defaultDocument()` | First-run document (sample invoice). |
 | `defaultLayout()` | Default page margins + guide settings. |
+| `defaultHeader()` | Default page header band (`enabled:false, height:12, content:'', style:{}`). |
+| `defaultFooter()` | Default page footer band (same shape as header). |
 | `newElement(type, x?, y?)` | Create an element of a given type with sensible defaults. |
 | `newHeadingElement(x?, y?)` | A bold 20pt heading text element. |
 | `newSignatureTemplate(x?, y?)` | Returns a `[label, line]` pair of elements. |
@@ -243,9 +256,9 @@ There is no lint script beyond CRA's built-in ESLint (`react-app` config). `npm 
   5. Update §5 of this file.
 
 - **Add a new built-in template**:
-  1. Write a factory in `src/lib/templates.js` returning `baseDoc([…])`.
-  2. Register it in the `TEMPLATES` object.
-  3. No UI changes required — the toolbar dropdown reads from `TEMPLATES`.
+  1. **Code-defined** (the existing pattern): write a factory in `src/lib/templates.js` returning `baseDoc([…])` and register it in the `TEMPLATES` object.
+  2. **JSON-defined** (recommended for long / hand-edited templates): drop a `Document`-shaped JSON file in `src/config/templates/` (the file's basename becomes the template key, and the label is auto-derived from the filename — `offer-letter.json` → "Offer Letter"). Add one import + one `TEMPLATES[…]` line at the bottom of `src/lib/templates.js`. The factory is `makeJsonTemplate(imported)` and runs the JSON through `importDocument()` so missing `header` / `footer` / `layout` fields are filled in.
+  3. Either way, no UI changes are required — the toolbar's `Templates` group reads from `TEMPLATES` and renders a thumbnail preview for each entry via `TemplatePreviewButton`.
 
 - **Add a new merge tag feature** (e.g. nested lookups): change `mergeTags` and `findTags` in `src/lib/document.js`. Update `DataPanel` only if the UI needs to surface it.
 

@@ -18,6 +18,8 @@ import {
   MM_TO_PX,
   mergeTags,
   defaultLayout,
+  defaultHeader,
+  defaultFooter,
 } from '../lib/document';
 import { getLayerColor } from '../lib/colors';
 
@@ -161,7 +163,11 @@ export default function DesignCanvas({
 
   const layoutConfig = useMemo(() => {
     const layout = doc.page?.layout || defaultLayout();
+    const header = doc.page?.header || defaultHeader();
+    const footer = doc.page?.footer || defaultFooter();
     const m = layout.margins || {};
+    const headerHeight = header.enabled ? header.height || 0 : 0;
+    const footerHeight = footer.enabled ? footer.height || 0 : 0;
     return {
       showMargins: layout.showMargins ?? true,
       marginGuideStyle: layout.marginGuideStyle || 'dotted',
@@ -174,8 +180,18 @@ export default function DesignCanvas({
         bottom: m.bottom ?? 0,
         left: m.left ?? 0,
       },
+      header: {
+        enabled: !!header.enabled,
+        height: headerHeight,
+        content: header.content || '',
+      },
+      footer: {
+        enabled: !!footer.enabled,
+        height: footerHeight,
+        content: footer.content || '',
+      },
     };
-  }, [doc.page?.layout]);
+  }, [doc.page?.layout, doc.page?.header, doc.page?.footer]);
 
   useEffect(() => {
     function updateFitScale() {
@@ -262,7 +278,11 @@ export default function DesignCanvas({
   }
 
   useEffect(() => {
-    const { strictMargin, snapToMargin, margins } = layoutConfig;
+    const { strictMargin, snapToMargin, margins, header, footer } = layoutConfig;
+    const headerGuard = header.enabled ? header.height : 0;
+    const footerGuard = footer.enabled ? footer.height : 0;
+    const topBound = Math.max(margins.top, headerGuard);
+    const bottomBound = Math.max(margins.bottom, footerGuard);
     const SNAP_MARGIN_MM = 2;
 
     function clamp(value, min, max) {
@@ -296,16 +316,17 @@ export default function DesignCanvas({
             const start = action.initialPositions.find((p) => p.id === item.id);
             if (!start) return item;
             const isWatermark = item.type === 'watermark';
-            const useMargin = !isWatermark;
+            const bypass = isWatermark || !!item.bypassStrictMargin;
+            const useMargin = !bypass;
             const minX = useMargin && strictMargin ? margins.left : 0;
             const maxX =
               PAGE_WIDTH -
               (useMargin && strictMargin ? margins.right : 0) -
               start.width;
-            const minY = useMargin && strictMargin ? margins.top : 0;
+            const minY = useMargin && strictMargin ? topBound : 0;
             const maxY =
               PAGE_HEIGHT -
-              (useMargin && strictMargin ? margins.bottom : 0) -
+              (useMargin && strictMargin ? bottomBound : 0) -
               start.height;
 
             const rawX = clamp(start.x + dx, minX, maxX);
@@ -315,7 +336,7 @@ export default function DesignCanvas({
               ? [margins.left, PAGE_WIDTH - margins.right - start.width]
               : [];
             const yTargets = useMargin
-              ? [margins.top, PAGE_HEIGHT - margins.bottom - start.height]
+              ? [topBound, PAGE_HEIGHT - bottomBound - start.height]
               : [];
 
             const xRes = applySnap(rawX, xTargets);
@@ -343,7 +364,8 @@ export default function DesignCanvas({
           const MIN_H = 5;
           const { handle, initialX, initialY, initialW, initialH } = action;
           const isWatermark = el.type === 'watermark';
-          const useMargin = !isWatermark;
+          const bypass = isWatermark || !!el.bypassStrictMargin;
+          const useMargin = !bypass;
 
           let width =
             initialW +
@@ -377,9 +399,9 @@ export default function DesignCanvas({
           let y = handle.includes('n') ? initialY + initialH - height : initialY;
 
           const minX = useMargin && strictMargin ? margins.left : 0;
-          const minY = useMargin && strictMargin ? margins.top : 0;
+          const minY = useMargin && strictMargin ? topBound : 0;
           const maxX = PAGE_WIDTH - (useMargin && strictMargin ? margins.right : 0);
-          const maxY = PAGE_HEIGHT - (useMargin && strictMargin ? margins.bottom : 0);
+          const maxY = PAGE_HEIGHT - (useMargin && strictMargin ? bottomBound : 0);
 
           x = clamp(x, minX, maxX - width);
           y = clamp(y, minY, maxY - height);
@@ -393,12 +415,12 @@ export default function DesignCanvas({
 
           if (!preserveRatio) {
             const xTargets = useMargin ? [margins.left] : [];
-            const yTargets = useMargin ? [margins.top] : [];
+            const yTargets = useMargin ? [topBound] : [];
             const widthTargets = useMargin
               ? [PAGE_WIDTH - margins.right - x]
               : [];
             const heightTargets = useMargin
-              ? [PAGE_HEIGHT - margins.bottom - y]
+              ? [PAGE_HEIGHT - bottomBound - y]
               : [];
 
             const xRes = applySnap(x, xTargets);
@@ -809,7 +831,7 @@ export default function DesignCanvas({
           onPointerDown={handlePagePointerDown}
         >
           {watermarks.map(renderElement)}
-          {showGrid && (
+          {mode === 'design' && showGrid && (
             <div
               className="absolute inset-0 pointer-events-none z-0"
               style={{
@@ -819,7 +841,7 @@ export default function DesignCanvas({
               }}
             />
           )}
-          {layoutConfig.showMargins && (
+          {mode === 'design' && layoutConfig.showMargins && (
             <div
               className="absolute pointer-events-none z-0 box-border"
               style={{
@@ -831,8 +853,64 @@ export default function DesignCanvas({
               }}
             />
           )}
+          {layoutConfig.header.enabled && (
+            <div
+              className="absolute pointer-events-none z-[1] box-border overflow-hidden flex items-end"
+              style={{
+                top: 0,
+                left: 0,
+                right: 0,
+                height: `${layoutConfig.header.height}mm`,
+                padding: `${Math.min(2, layoutConfig.header.height / 4)}mm ${layoutConfig.margins.left}mm`,
+                background: mode === 'design' ? 'rgba(140, 43, 238, 0.04)' : 'transparent',
+                borderBottom:
+                  mode === 'design'
+                    ? `1.5px ${layoutConfig.marginGuideStyle === 'dotted' ? 'dotted' : 'solid'} ${layoutConfig.marginGuideColor}`
+                    : 'none',
+              }}
+            >
+              <div
+                className={`truncate w-full ${mode === 'design' ? 'text-[0.6rem] uppercase tracking-wider' : 'text-sm text-gray-900'}`}
+                style={
+                  mode === 'design'
+                    ? { color: layoutConfig.marginGuideColor }
+                    : undefined
+                }
+              >
+                {layoutConfig.header.content || (mode === 'design' ? 'Header' : '')}
+              </div>
+            </div>
+          )}
+          {layoutConfig.footer.enabled && (
+            <div
+              className="absolute pointer-events-none z-[1] box-border overflow-hidden flex items-start"
+              style={{
+                bottom: 0,
+                left: 0,
+                right: 0,
+                height: `${layoutConfig.footer.height}mm`,
+                padding: `${Math.min(2, layoutConfig.footer.height / 4)}mm ${layoutConfig.margins.left}mm`,
+                background: mode === 'design' ? 'rgba(140, 43, 238, 0.04)' : 'transparent',
+                borderTop:
+                  mode === 'design'
+                    ? `1.5px ${layoutConfig.marginGuideStyle === 'dotted' ? 'dotted' : 'solid'} ${layoutConfig.marginGuideColor}`
+                    : 'none',
+              }}
+            >
+              <div
+                className={`truncate w-full ${mode === 'design' ? 'text-[0.6rem] uppercase tracking-wider' : 'text-sm text-gray-900'}`}
+                style={
+                  mode === 'design'
+                    ? { color: layoutConfig.marginGuideColor }
+                    : undefined
+                }
+              >
+                {layoutConfig.footer.content || (mode === 'design' ? 'Footer' : '')}
+              </div>
+            </div>
+          )}
           {others.map(renderElement)}
-          {showGuides &&
+          {mode === 'design' && showGuides &&
             others.map((el) => (
               <div
                 key={`guide-${el.id}`}

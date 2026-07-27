@@ -132,3 +132,24 @@ export function loadSettings() {
     return null;
   }
 }
+
+const MERGE_DATA_KEY = 'docugine:merge-data';
+
+export function saveMergeData(data) {
+  if (!data || typeof data !== 'object') return false;
+  return safeSet(MERGE_DATA_KEY, JSON.stringify(data));
+}
+
+export function loadMergeData() {
+  const raw = safeGet(MERGE_DATA_KEY);
+  if (!raw) return null;
+  try {
+    const parsed = JSON.parse(raw);
+    if (parsed && typeof parsed === 'object' && !Array.isArray(parsed)) {
+      return parsed;
+    }
+    return null;
+  } catch {
+    return null;
+  }
+}

@@ -53,8 +53,9 @@ const tabBtn =
 const tabBtnActive =
   'bg-brand-surfaceAlt text-gray-900 font-semibold after:content-[""] after:absolute after:left-0 after:right-0 after:-bottom-px after:h-0.5 after:bg-brand-accent';
 const ribbonBtn =
-  'inline-flex items-center justify-center gap-1 bg-white text-gray-900 border border-transparent rounded px-2 py-1 text-sm cursor-pointer min-w-[28px] leading-tight hover:bg-gray-100 hover:border-gray-300 disabled:opacity-50 disabled:cursor-not-allowed';
-const ribbonBtnActive = 'bg-brand-accent text-white border-brand-accentDark';
+  'inline-flex items-center justify-center gap-1 bg-white text-gray-900 border border-gray-300 rounded px-2 py-1 text-sm cursor-pointer min-w-[28px] leading-tight hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed';
+const ribbonBtnActive =
+  '!bg-brand-accent !text-white !border-brand-accentDark hover:!bg-brand-accentDark hover:!border-brand-accentDark';
 const ico = { size: 14, strokeWidth: 2 };
 const dangerBtn =
   'bg-brand-danger text-white border-none rounded px-3 py-1.5 text-sm cursor-pointer hover:bg-brand-dangerDark';
@@ -279,22 +280,16 @@ function HomeTab({
         </button>
       </Group>
       <Group title="Templates">
-        <select
-          className="border border-gray-300 rounded px-1.5 py-0.5 text-sm bg-white text-gray-900"
-          value=""
-          onChange={(e) => {
-            const k = e.target.value;
-            if (k) onLoadTemplate(k);
-            e.target.value = '';
-          }}
-        >
-          <option value="">Load template...</option>
-          {Object.entries(templates).map(([key, { label }]) => (
-            <option key={key} value={key}>
-              {label}
-            </option>
+        <div className="flex items-center gap-1.5 flex-wrap">
+          {Object.entries(templates).map(([key, { label, factory }]) => (
+            <TemplatePreviewButton
+              key={key}
+              label={label}
+              factory={factory}
+              onClick={() => onLoadTemplate(key)}
+            />
           ))}
-        </select>
+        </div>
       </Group>
     </>
   );
@@ -498,5 +493,86 @@ function FormatTab({ quillRef, onDoneEditing }) {
         <TextButtons quillRef={quillRef} onDone={onDoneEditing} />
       </Group>
     </>
+  );
+}
+
+const PREVIEW_W = 36;
+const PREVIEW_H = Math.round((PREVIEW_W * 297) / 210);
+const PREVIEW_SCALE = PREVIEW_W / 210;
+
+function TemplatePreviewButton({ label, factory, onClick }) {
+  let elements = [];
+  try {
+    const doc = factory();
+    elements = doc?.pages?.[0]?.elements || [];
+  } catch {
+    elements = [];
+  }
+  const titleEl = elements.find((el) => el.type === 'text');
+  const titleText = titleEl
+    ? String(titleEl.content || '')
+        .replace(/<[^>]+>/g, ' ')
+        .replace(/\s+/g, ' ')
+        .trim()
+        .slice(0, 28)
+    : '';
+
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      title={`Load ${label} template`}
+      className="flex items-center gap-1.5 px-1.5 py-1 rounded border border-gray-300 bg-white hover:border-brand-accent hover:!bg-brand-accent/5 cursor-pointer touch-manipulation min-h-[44px]"
+    >
+      <div
+        className="relative bg-white border border-gray-400 shadow-sm overflow-hidden flex-shrink-0"
+        style={{ width: PREVIEW_W, height: PREVIEW_H }}
+      >
+        {elements.map((el) => {
+          if (el.type === 'watermark') return null;
+          const x = el.x * PREVIEW_SCALE;
+          const y = el.y * PREVIEW_SCALE;
+          const w = Math.max(1, el.width * PREVIEW_SCALE);
+          const h = Math.max(1, el.height * PREVIEW_SCALE);
+          let bg = 'rgba(140, 43, 238, 0.18)';
+          let border = '0.5px solid rgba(140, 43, 238, 0.55)';
+          if (el.type === 'rect') {
+            const fill = el.style?.backgroundColor || '#f3f4f6';
+            bg = fill === 'transparent' ? 'rgba(0,0,0,0.02)' : fill;
+            const bc = el.style?.borderColor || '#9ca3af';
+            border = `0.5px solid ${bc}`;
+          } else if (el.type === 'line') {
+            bg = el.style?.lineColor || '#111827';
+            border = 'none';
+          }
+          return (
+            <div
+              key={el.id}
+              className="absolute"
+              style={{ left: x, top: y, width: w, height: h, background: bg, border }}
+            />
+          );
+        })}
+        {titleEl && titleText && (
+          <div
+            className="absolute overflow-hidden text-gray-900 font-bold leading-none pointer-events-none"
+            style={{
+              left: titleEl.x * PREVIEW_SCALE + 0.5,
+              top: titleEl.y * PREVIEW_SCALE + 0.5,
+              width: Math.max(2, titleEl.width * PREVIEW_SCALE - 1),
+              height: Math.max(3, titleEl.height * PREVIEW_SCALE - 1),
+              fontSize: Math.max(3, titleEl.height * PREVIEW_SCALE * 0.55),
+              whiteSpace: 'nowrap',
+              textOverflow: 'ellipsis',
+            }}
+          >
+            {titleText}
+          </div>
+        )}
+      </div>
+      <span className="text-[0.7rem] text-gray-700 whitespace-nowrap leading-none">
+        {label}
+      </span>
+    </button>
   );
 }

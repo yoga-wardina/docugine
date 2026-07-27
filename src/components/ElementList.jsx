@@ -76,8 +76,8 @@ export default function ElementList({
                 tabIndex={0}
                 className={`${rowCls} ${
                   selected
-                    ? 'bg-blue-50 text-brand-accent font-semibold'
-                    : 'hover:bg-gray-100 active:bg-gray-200'
+                    ? 'bg-brand-accent/15 text-brand-accent font-semibold border-l-2 border-brand-accent pl-[6px]'
+                    : 'hover:bg-gray-100 active:bg-gray-200 border-l-2 border-transparent pl-[6px]'
                 } ${el.hidden ? 'opacity-50' : ''}`}
                 onClick={(e) => handleSelect(el.id, e)}
                 onKeyDown={(e) => {

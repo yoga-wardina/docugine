@@ -21,3 +21,42 @@ body {
   font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
   font-size: 0.9em;
 }
+
+/* Quill content rendered as static HTML (non-editing view) */
+.text-content {
+  font-size: inherit;
+  line-height: 1.4;
+}
+.text-content p {
+  margin: 0;
+}
+.text-content h1,
+.text-content h2,
+.text-content h3 {
+  margin: 0;
+  font-weight: bold;
+}
+.text-content ol,
+.text-content ul {
+  margin: 0;
+  padding-left: 1.25em;
+  list-style-position: inside;
+}
+.text-content ol {
+  list-style-type: decimal;
+}
+.text-content ul {
+  list-style-type: disc;
+}
+.text-content li {
+  margin: 0;
+  padding: 0;
+  display: list-item;
+}
+.text-content blockquote {
+  margin: 0;
+  padding-left: 0.75em;
+  border-left: 3px solid #d1d5db;
+  color: #4b5563;
+}
+

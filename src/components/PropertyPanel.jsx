@@ -247,23 +247,37 @@ export default function PropertyPanel({
         <p className={hintCls}>Drag the element on the canvas to position it.</p>
       </div>
 
+      {element.type !== 'watermark' && (
+        <div className={sectionCls}>
+          <label className={labelCls}>Position</label>
+          <label className="flex items-start gap-2 cursor-pointer rounded p-2 -ml-2 hover:bg-gray-50">
+            <input
+              type="checkbox"
+              className="mt-0.5 w-4 h-4 accent-brand-accent cursor-pointer"
+              checked={!!element.bypassStrictMargin}
+              onChange={(e) =>
+                update({ bypassStrictMargin: e.target.checked })
+              }
+            />
+            <span className="text-sm text-gray-700 select-none">
+              Bypass strict margin
+              <span className="block text-xs text-gray-500 leading-snug">
+                Let this layer cross the page margin and header/footer bands,
+                even when the page is set to strict margin.
+              </span>
+            </span>
+          </label>
+        </div>
+      )}
+
       {element.type === 'text' && (
         <div className={sectionCls}>
-          <label className={labelCls}>Content</label>
-          <p className={hintCls}>Use {'{{tagName}}'} for merge fields.</p>
-          <textarea
-            className={inputCls}
-            rows={6}
-            value={element.content}
-            onChange={(e) => update({ content: e.target.value })}
-          />
-
-          <div className="flex items-center justify-between mb-1.5 mt-3">
+          <div className="flex items-center justify-between mb-1.5">
             <label className="text-sm font-semibold text-gray-700">Text</label>
             <span
               className={`text-[0.7rem] uppercase tracking-wider px-1.5 py-0.5 rounded ${
                 inTextFocus
-                  ? 'bg-blue-50 text-brand-accent border border-blue-200'
+                  ? 'bg-brand-accent/15 text-brand-accent border border-brand-accent/30'
                   : 'bg-gray-100 text-gray-500 border border-gray-200'
               }`}
               title={
@@ -395,14 +409,6 @@ export default function PropertyPanel({
 
       {element.type === 'image' && (
         <div className={sectionCls}>
-          <label className={labelCls}>Image URL</label>
-          <input
-            className={inputCls}
-            type="text"
-            value={element.content}
-            placeholder="https://example.com/image.png"
-            onChange={(e) => update({ content: e.target.value })}
-          />
           <label className={labelCls}>Object fit</label>
           <select
             className={inputCls}
@@ -421,14 +427,7 @@ export default function PropertyPanel({
 
       {element.type === 'watermark' && (
         <div className={sectionCls}>
-          <label className={labelCls}>Watermark image</label>
-          <input
-            className={inputCls}
-            type="text"
-            value={element.content}
-            placeholder="https://example.com/watermark.png"
-            onChange={(e) => update({ content: e.target.value })}
-          />
+          <label className={labelCls}>Watermark</label>
           <div className={rowCls}>
             <div className={colCls}>
               <span className={colSpanCls}>Opacity</span>

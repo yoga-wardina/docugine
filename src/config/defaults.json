@@ -13,7 +13,7 @@
     "zoomStep": 1.2,
     "view": {
         "showGrid": false,
-        "showGuides": true,
+        "showGuides": false,
         "showRulers": false
     },
     "panels": {
@@ -164,16 +164,28 @@
     },
     "layout": {
         "margins": {
-            "top": 20,
-            "right": 20,
-            "bottom": 20,
-            "left": 20
+            "top": 10,
+            "right": 15,
+            "bottom": 10,
+            "left": 15
         },
         "marginGuideStyle": "dotted",
         "marginGuideColor": "#94a3b8",
         "showMargins": true,
-        "strictMargin": false,
-        "snapToMargin": false
+        "strictMargin": true,
+        "snapToMargin": true
+    },
+    "pageHeader": {
+        "enabled": false,
+        "height": 12,
+        "content": "",
+        "style": {}
+    },
+    "pageFooter": {
+        "enabled": false,
+        "height": 12,
+        "content": "",
+        "style": {}
     },
     "persistence": {
         "currentKey": "docugine:current",
@@ -181,7 +193,8 @@
         "sessionsIndexKey": "docugine:sessions",
         "sessionPrefix": "docugine:session:",
         "settingsKey": "docugine:settings",
-        "deviceWarningKey": "docugine:device-warning-dismissed"
+        "deviceWarningKey": "docugine:device-warning-dismissed",
+        "mergeDataKey": "docugine:merge-data"
     },
     "sampleData": {
         "invoiceNumber": "INV-001",

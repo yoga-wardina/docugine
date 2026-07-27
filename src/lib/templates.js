@@ -5,7 +5,9 @@ import {
   newId,
   newSignatureTemplate,
   defaultLayout,
+  importDocument,
 } from './document';
+import offerLetter from '../config/templates/offer-letter.json';
 
 function baseDoc(elements) {
   return {
@@ -189,4 +191,24 @@ export const TEMPLATES = {
   contract: { label: 'Contract', factory: contractTemplate },
   approval: { label: 'Approval Request', factory: approvalTemplate },
   memo: { label: 'Memo', factory: memoTemplate },
+};
+
+function labelFromFilename(name) {
+  return name
+    .replace(/[-_]+/g, ' ')
+    .split(' ')
+    .filter(Boolean)
+    .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
+    .join(' ');
+}
+
+function makeJsonTemplate(imported) {
+  return () => importDocument(JSON.stringify(imported));
+}
+
+// To add a new built-in template, drop a JSON file in src/config/templates/
+// (matching the Document shape: { pages: [...] }) and add one line below.
+TEMPLATES['offer-letter'] = {
+  label: labelFromFilename('offer-letter'),
+  factory: makeJsonTemplate(offerLetter),
 };

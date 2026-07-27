@@ -14,6 +14,14 @@ export function defaultLayout() {
   };
 }
 
+export function defaultHeader() {
+  return { enabled: false, height: 12, content: '', style: {} };
+}
+
+export function defaultFooter() {
+  return { enabled: false, height: 12, content: '', style: {} };
+}
+
 function newPage(elements = []) {
   return {
     page: {
@@ -21,6 +29,8 @@ function newPage(elements = []) {
       height: PAGE_HEIGHT,
       unit: PAGE_UNIT,
       layout: defaultLayout(),
+      header: defaultHeader(),
+      footer: defaultFooter(),
     },
     elements,
   };
@@ -265,6 +275,22 @@ function normalizePage(raw, index) {
   }
   if (page.layout.strictMargin === undefined) page.layout.strictMargin = false;
   if (page.layout.snapToMargin === undefined) page.layout.snapToMargin = false;
+  if (!page.header) {
+    page.header = defaultHeader();
+  } else {
+    if (page.header.enabled === undefined) page.header.enabled = false;
+    if (page.header.height === undefined) page.header.height = 12;
+    if (page.header.content === undefined) page.header.content = '';
+    if (!page.header.style) page.header.style = {};
+  }
+  if (!page.footer) {
+    page.footer = defaultFooter();
+  } else {
+    if (page.footer.enabled === undefined) page.footer.enabled = false;
+    if (page.footer.height === undefined) page.footer.height = 12;
+    if (page.footer.content === undefined) page.footer.content = '';
+    if (!page.footer.style) page.footer.style = {};
+  }
   return {
     page,
     elements: (raw.elements || []).map((el, i) => ({

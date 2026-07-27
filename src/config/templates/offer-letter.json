@@ -1,0 +1,212 @@
+{
+  "pages": [
+    {
+      "page": {
+        "width": 210,
+        "height": 297,
+        "unit": "mm",
+        "layout": {
+          "margins": {
+            "top": 17,
+            "right": 15,
+            "bottom": 12,
+            "left": 15
+          },
+          "marginGuideStyle": "dotted",
+          "marginGuideColor": "#94a3b8",
+          "showMargins": true,
+          "strictMargin": true,
+          "snapToMargin": true
+        },
+        "header": {
+          "enabled": true,
+          "height": 12,
+          "content": "Ipresens: docugine",
+          "style": {}
+        },
+        "footer": {
+          "enabled": true,
+          "height": 8,
+          "content": "ipresens: docugine",
+          "style": {}
+        }
+      },
+      "elements": [
+        {
+          "id": "64572551-594f-4a76-a978-e79ebb779f5b",
+          "type": "text",
+          "x": 15,
+          "y": 17,
+          "width": 64.82291666666666,
+          "height": 13.229166666666664,
+          "content": "<p>OFFER LETTER</p>",
+          "style": {
+            "fontSize": 22,
+            "color": "#111827",
+            "textAlign": "left",
+            "fontFamily": "Arial, sans-serif",
+            "fontWeight": "bold"
+          }
+        },
+        {
+          "id": "32b90b77-3bc7-46f2-8a46-079d08e64829",
+          "type": "text",
+          "x": 15,
+          "y": 102.43750000000003,
+          "width": 179.91666666666666,
+          "height": 182.56249999999997,
+          "content": "<p><span style=\"font-size: 12px;\">Dear </span>{{recName}},</p><p><span style=\"color: rgb(51, 51, 51); font-size: 12px; background-color: rgb(255, 255, 255);\">On behalf of Acme Corporation, I am delighted to extend this offer for the position of </span><strong style=\"color: rgb(51, 51, 51); font-size: 12px; background-color: rgb(255, 255, 255);\">{{offeredRole}}</strong><span style=\"color: rgb(51, 51, 51); font-size: 12px; background-color: rgb(255, 255, 255);\"> Your experience and technical expertise make you an excellent fit for our team.</span></p><p><br></p><h2><strong style=\"background-color: rgb(255, 255, 255); color: rgb(17, 17, 17); font-size: 12px;\">Compensation Package</strong></h2><p><span style=\"font-size: 12px; background-color: rgb(255, 255, 255); color: rgb(51, 51, 51);\">Your annual base salary will be </span><strong style=\"font-size: 12px; background-color: rgb(255, 255, 255); color: rgb(51, 51, 51);\">{{currency}}{{salary}}</strong><span style=\"font-size: 12px; background-color: rgb(255, 255, 255); color: rgb(51, 51, 51);\">, paid bi-weekly. You will also be eligible for a performance bonus of up to </span><strong style=\"font-size: 12px; background-color: rgb(255, 255, 255); color: rgb(51, 51, 51);\">15%</strong><span style=\"font-size: 12px; background-color: rgb(255, 255, 255); color: rgb(51, 51, 51);\"> of your base salary, payable annually based on company and individual performance metrics.</span></p><p><br></p><h2><strong style=\"font-size: 12px; color: rgb(17, 17, 17); background-color: rgb(255, 255, 255);\">Equity Grant</strong></h2><p><span style=\"color: rgb(51, 51, 51); font-size: 12px; background-color: rgb(255, 255, 255);\">Subject to Board approval, you will receive a stock option grant of </span><strong style=\"color: rgb(51, 51, 51); font-size: 12px; background-color: rgb(255, 255, 255);\">15,000 shares</strong><span style=\"color: rgb(51, 51, 51); font-size: 12px; background-color: rgb(255, 255, 255);\"> vesting over four years with a one-year cliff, at the fair market value on your start date.</span></p><p><br></p><h2><strong style=\"background-color: rgb(255, 255, 255); color: rgb(17, 17, 17); font-size: 12px;\">Benefits Overview</strong></h2><ol><li data-list=\"bullet\"><span class=\"ql-ui\" contenteditable=\"false\"></span><span style=\"background-color: rgb(255, 255, 255); font-size: 12px; color: rgb(51, 51, 51);\">Comprehensive health, dental, and vision insurance</span></li><li data-list=\"bullet\"><span class=\"ql-ui\" contenteditable=\"false\"></span><span style=\"background-color: rgb(255, 255, 255); font-size: 12px; color: rgb(51, 51, 51);\">401(k) plan with 4% company match</span></li><li data-list=\"bullet\"><span class=\"ql-ui\" contenteditable=\"false\"></span><span style=\"background-color: rgb(255, 255, 255); font-size: 12px; color: rgb(51, 51, 51);\">15 days paid time off plus company holidays</span></li><li data-list=\"bullet\"><span class=\"ql-ui\" contenteditable=\"false\"></span><span style=\"background-color: rgb(255, 255, 255); font-size: 12px; color: rgb(51, 51, 51);\">Professional development budget of $2,500 annually</span></li><li data-list=\"bullet\"><span class=\"ql-ui\" contenteditable=\"false\"></span><span style=\"background-color: rgb(255, 255, 255); font-size: 12px; color: rgb(51, 51, 51);\">Home office setup allowance of $1,000</span></li></ol><p><br></p><h2><strong style=\"color: rgb(17, 17, 17); background-color: rgb(255, 255, 255); font-size: 12px;\">Next Steps</strong></h2><p><span style=\"color: rgb(51, 51, 51); font-size: 12px; background-color: rgb(255, 255, 255);\">Please review the attached employment agreement and return a signed copy by </span><strong style=\"color: rgb(51, 51, 51); font-size: 12px; background-color: rgb(255, 255, 255);\">July 30, 2026</strong><span style=\"color: rgb(51, 51, 51); font-size: 12px; background-color: rgb(255, 255, 255);\">. Your start date is confirmed for </span><strong style=\"color: rgb(51, 51, 51); font-size: 12px; background-color: rgb(255, 255, 255);\">August 15, 2026</strong><span style=\"color: rgb(51, 51, 51); font-size: 12px; background-color: rgb(255, 255, 255);\">.</span></p><p><br></p><p><span style=\"color: rgb(51, 51, 51); font-size: 12px; background-color: rgb(255, 255, 255);\">We are excited to welcome you to the team!</span></p><p><span style=\"color: rgb(51, 51, 51); font-size: 12px; background-color: rgb(255, 255, 255);\">Best regards,</span></p><p><strong style=\"color: rgb(51, 51, 51); font-size: 12px; background-color: rgb(255, 255, 255);\">{{senderName}}</strong></p><p><span style=\"color: rgb(51, 51, 51); font-size: 12px; background-color: rgb(255, 255, 255);\">{{senderRole}}</span></p><p><span style=\"font-size: 12px;\">{{companyName}}</span></p>",
+          "style": {
+            "fontSize": 10,
+            "color": "#374151",
+            "textAlign": "justify",
+            "fontFamily": "Arial, Sans serif"
+          }
+        },
+        {
+          "id": "7516cb59-5224-4dbb-a5e8-4c116d8657b2",
+          "type": "text",
+          "x": 15,
+          "y": 30.42708333333333,
+          "width": 64.82291666666666,
+          "height": 6.614583333333332,
+          "content": "<p><span style=\"color: rgb(51, 51, 51); font-size: 12px; background-color: rgb(255, 255, 255);\">{{offeredRole}}</span></p>",
+          "style": {
+            "fontSize": 10,
+            "color": "#111827",
+            "textAlign": "left",
+            "fontFamily": "Arial, sans-serif"
+          }
+        },
+        {
+          "id": "4bbcbe0c-dd89-47a4-9b7a-455f9329d868",
+          "type": "rect",
+          "x": 15,
+          "y": 38.36458333333333,
+          "width": 179.91666666666666,
+          "height": 51.59374999999999,
+          "content": "",
+          "style": {
+            "backgroundColor": "#f3f4f6",
+            "borderColor": "#9ca3af",
+            "borderWidth": 1,
+            "borderStyle": "solid",
+            "opacity": 0.3
+          }
+        },
+        {
+          "id": "bcf15467-2050-4b08-a68f-fe02d00768c6",
+          "type": "text",
+          "x": 17.197916666666664,
+          "y": 41.010416666666664,
+          "width": 83.34374999999999,
+          "height": 46.30208333333333,
+          "content": "<p><strong style=\"color: rgb(51, 51, 51);\">Recipient</strong></p><p>{{recName}}</p><p><br></p><p><strong style=\"color: rgb(51, 51, 51);\">Start Date</strong></p><p>{{startDate}}</p><p><br></p><p><strong style=\"color: rgb(51, 51, 51);\">Department</strong></p><p>{{department}}</p>",
+          "style": {
+            "fontSize": 11,
+            "color": "#111827",
+            "textAlign": "left",
+            "fontFamily": "Arial, sans-serif",
+            "whiteSpace": "pre-wrap"
+          }
+        },
+        {
+          "id": "a7c15342-7a7b-46d1-8405-4036b468795c",
+          "type": "text",
+          "x": 100.54166666666666,
+          "y": 41.010416666666664,
+          "width": 88.63541666666666,
+          "height": 46.30208333333333,
+          "content": "<p><strong style=\"color: rgb(51, 51, 51);\">Location</strong></p><p>{{location}}</p><p><br></p><p><strong style=\"color: rgb(51, 51, 51);\">Reports to</strong></p><p>{{reportsTo}}</p><p><br></p><p><strong style=\"color: rgb(51, 51, 51);\">Employment Type</strong></p><p>{{empType}}</p>",
+          "style": {
+            "fontSize": 11,
+            "color": "#111827",
+            "textAlign": "left",
+            "fontFamily": "Arial, sans-serif",
+            "whiteSpace": "pre-wrap"
+          }
+        },
+        {
+          "id": "4f7fa04e-ce83-43f2-aaea-24909a3acfcf",
+          "type": "line",
+          "x": 0,
+          "y": 95.24999999999999,
+          "width": 210.34374999999997,
+          "height": 0.5,
+          "content": "",
+          "style": {
+            "lineColor": "#111827",
+            "rotation": 0,
+            "opacity": 0.15
+          }
+        }
+      ]
+    },
+    {
+      "page": {
+        "width": 210,
+        "height": 297,
+        "unit": "mm",
+        "layout": {
+          "margins": {
+            "top": 20,
+            "right": 20,
+            "bottom": 20,
+            "left": 20
+          },
+          "marginGuideStyle": "dotted",
+          "marginGuideColor": "#94a3b8",
+          "showMargins": true,
+          "strictMargin": false,
+          "snapToMargin": false
+        },
+        "header": {
+          "enabled": false,
+          "height": 12,
+          "content": "",
+          "style": {}
+        },
+        "footer": {
+          "enabled": false,
+          "height": 12,
+          "content": "",
+          "style": {}
+        }
+      },
+      "elements": []
+    },
+    {
+      "page": {
+        "width": 210,
+        "height": 297,
+        "unit": "mm",
+        "layout": {
+          "margins": {
+            "top": 20,
+            "right": 20,
+            "bottom": 20,
+            "left": 20
+          },
+          "marginGuideStyle": "dotted",
+          "marginGuideColor": "#94a3b8",
+          "showMargins": true,
+          "strictMargin": false,
+          "snapToMargin": false
+        },
+        "header": {
+          "enabled": false,
+          "height": 12,
+          "content": "",
+          "style": {}
+        },
+        "footer": {
+          "enabled": false,
+          "height": 12,
+          "content": "",
+          "style": {}
+        }
+      },
+      "elements": []
+    }
+  ]
+}

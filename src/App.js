@@ -2,10 +2,13 @@ import React, { useCallback, useEffect, useReducer, useRef, useState } from 'rea
 import {
   defaultDocument,
   defaultLayout,
+  defaultHeader,
+  defaultFooter,
   newElement,
   newHeadingElement,
   newSignatureTemplate,
   newWatermarkElement,
+  newId,
   importDocument,
   MM_TO_PX,
 } from './lib/document';
@@ -25,6 +28,8 @@ import {
   deleteSession,
   renameSession,
   defaultSessionName,
+  saveMergeData,
+  loadMergeData,
 } from './lib/session';
 import { useBreakpoint } from './lib/useBreakpoint';
 import { useNeedsPointerWarning } from './lib/useDevice';
@@ -69,10 +74,20 @@ function App() {
   const [currentPage, setCurrentPage] = useState(defaults.currentPage);
   const [selectedIds, setSelectedIds] = useState(defaults.selectedIds);
   const [mode, setMode] = useState(defaults.mode);
-  const [data, setData] = useState(() => ({
-    ...defaults.sampleData,
-    date: new Date().toISOString().split('T')[0],
-  }));
+  const [data, setData] = useState(() => {
+    const saved = loadMergeData();
+    if (saved && typeof saved === 'object') {
+      return {
+        ...defaults.sampleData,
+        ...saved,
+        date: saved.date || new Date().toISOString().split('T')[0],
+      };
+    }
+    return {
+      ...defaults.sampleData,
+      date: new Date().toISOString().split('T')[0],
+    };
+  });
   const [snapEnabled, setSnapEnabled] = useState(defaults.snap.enabled);
   const [snapPixels, setSnapPixels] = useState(defaults.snap.pixels);
   const snapMm = snapEnabled ? snapPixels / MM_TO_PX : 0;
@@ -218,6 +233,18 @@ function App() {
     [currentPage]
   );
 
+  const setAllPagesDoc = useCallback(
+    (updater) => {
+      setDoc((prev) => ({
+        ...prev,
+        pages: prev.pages.map((p) =>
+          typeof updater === 'function' ? updater(p) : updater
+        ),
+      }));
+    },
+    []
+  );
+
   const startEditing = useCallback(
     (id) => {
       if (mode !== 'design') return;
@@ -275,13 +302,18 @@ function App() {
   }, [doc]);
 
   useEffect(() => {
+    saveMergeData(data);
+  }, [data]);
+
+  useEffect(() => {
     if (!defaults.session.autoSaveEnabled) return;
     const handle = setInterval(() => {
       saveCurrent(doc);
       saveHistory(history);
+      saveMergeData(data);
     }, defaults.session.autoSaveIntervalMs);
     return () => clearInterval(handle);
-  }, [doc, history]);
+  }, [doc, history, data]);
 
   function updateLeftWidth(dx) {
     setLeftWidth((w) =>
@@ -431,27 +463,40 @@ function App() {
 
   function addWatermark() {
     const el = newWatermarkElement(55, 100);
-    setPageDoc((prev) => ({ ...prev, elements: [...prev.elements, el] }));
+    setAllPagesDoc((prev) => {
+      if (prev.elements.some((it) => it.type === 'watermark')) return prev;
+      return { ...prev, elements: [...prev.elements, { ...el, id: newId() }] };
+    });
     setSelectedIds([el.id]);
     setMode('design');
   }
 
   function addPage() {
-    setDoc((prev) => ({
-      ...prev,
-      pages: [
-        ...prev.pages,
-        {
-          page: {
-            width: defaults.canvas.pageWidth,
-            height: defaults.canvas.pageHeight,
-            unit: defaults.canvas.pageUnit,
-            layout: defaultLayout(),
+    setDoc((prev) => {
+      const src = prev.pages[currentPage] || {
+        page: { layout: defaultLayout() },
+        elements: [],
+      };
+      const srcPage = src.page || {};
+      const watermark = (src.elements || []).filter((el) => el.type === 'watermark');
+      return {
+        ...prev,
+        pages: [
+          ...prev.pages,
+          {
+            page: {
+              width: defaults.canvas.pageWidth,
+              height: defaults.canvas.pageHeight,
+              unit: defaults.canvas.pageUnit,
+              layout: { ...(srcPage.layout || defaultLayout()) },
+              header: { ...(srcPage.header || defaultHeader()) },
+              footer: { ...(srcPage.footer || defaultFooter()) },
+            },
+            elements: watermark.map((w) => ({ ...w, id: newId() })),
           },
-          elements: [],
-        },
-      ],
-    }));
+        ],
+      };
+    });
     setCurrentPage((prev) => prev + 1);
     setSelectedIds([]);
     setMode('design');
@@ -585,7 +630,7 @@ function App() {
         onLoadSnapshot={doLoadSnapshot}
         editingId={editingId}
         doc={pageDoc}
-        setDoc={setPageDoc}
+        setDoc={setAllPagesDoc}
         setSelectedIds={setSelectedIds}
         selectedIds={selectedIds}
         quillRef={quillRef}
