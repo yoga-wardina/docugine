@@ -551,18 +551,6 @@ function App() {
   function renderRightPanel() {
     return (
       <>
-        <SessionPanel
-          sessions={sessions}
-          canUndo={history.canUndo()}
-          canRedo={history.canRedo()}
-          onUndo={doUndo}
-          onRedo={doRedo}
-          onSave={() => doSaveSnapshot()}
-          onLoad={doLoadSnapshot}
-          onDelete={doDeleteSnapshot}
-          onRename={doRenameSnapshot}
-          historyDepth={history.size()}
-        />
         {mode === 'design' && (
           <>
             <PropertyPanel
@@ -575,6 +563,18 @@ function App() {
             />
           </>
         )}
+        <SessionPanel
+          sessions={sessions}
+          canUndo={history.canUndo()}
+          canRedo={history.canRedo()}
+          onUndo={doUndo}
+          onRedo={doRedo}
+          onSave={() => doSaveSnapshot()}
+          onLoad={doLoadSnapshot}
+          onDelete={doDeleteSnapshot}
+          onRename={doRenameSnapshot}
+          historyDepth={history.size()}
+        />
         {mode === 'merge' && (
           <DataPanel doc={doc} data={data} setData={setData} />
         )}
