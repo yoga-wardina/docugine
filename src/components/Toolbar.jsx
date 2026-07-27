@@ -22,9 +22,7 @@ import {
   Undo2,
   Redo2,
   Camera,
-  PanelRight,
   ScanLine,
-  Menu,
 } from 'lucide-react';
 import {
   StylingButtons,
@@ -32,6 +30,7 @@ import {
   ListButtons,
   TextButtons,
 } from './EditorToolbar';
+import PageTab from './PageTab';
 
 const tipId = 'docugine-tip';
 
@@ -75,6 +74,7 @@ export default function Toolbar(props) {
   const tabs = [
     { id: 'home', label: 'Home' },
     { id: 'insert', label: 'Insert' },
+    { id: 'page', label: 'Page' },
     { id: 'view', label: 'View' },
     { id: 'format', label: 'Format' },
   ];
@@ -83,17 +83,6 @@ export default function Toolbar(props) {
     <div className="bg-brand-surfaceAlt text-gray-900 border-b border-gray-300 flex-shrink-0">
       <div className="flex items-center gap-2 sm:gap-3 px-2 sm:px-3.5 py-1.5 bg-white border-b border-gray-200">
         <div className="flex items-center gap-1 sm:gap-2 min-w-0">
-          {props.isCompact && (
-            <button
-              type="button"
-              className="p-1.5 rounded hover:bg-gray-100"
-              onClick={props.onToggleLeft}
-              title="Toggle layers panel"
-              aria-label="Toggle layers panel"
-            >
-              <Menu {...ico} />
-            </button>
-          )}
           <div className="flex items-baseline gap-1 sm:gap-2 min-w-0">
             <strong className="text-base sm:text-lg font-bold text-gray-900 whitespace-nowrap">Docugine</strong>
             <span className="hidden sm:inline text-gray-500 text-sm whitespace-nowrap">A4 templating</span>
@@ -112,17 +101,6 @@ export default function Toolbar(props) {
           ))}
         </div>
         <div className="flex items-center gap-1">
-          {props.isCompact && (
-            <button
-              type="button"
-              className={`p-1.5 rounded hover:bg-gray-100 ${props.rightOpen ? 'bg-gray-100' : ''}`}
-              onClick={props.onToggleRight}
-              title="Toggle properties panel"
-              aria-label="Toggle properties panel"
-            >
-              <PanelRight {...ico} />
-            </button>
-          )}
           <button type="button" className={`${dangerBtn} inline-flex items-center gap-1 text-xs sm:text-sm px-2 sm:px-3`} onClick={onReset}>
             <RotateCcw {...ico} /> <span className="hidden sm:inline">Reset</span>
           </button>
@@ -131,6 +109,7 @@ export default function Toolbar(props) {
       <div className="flex items-stretch px-3.5 py-1.5 gap-0 bg-brand-surface border-t border-gray-200 overflow-x-auto min-h-[70px]">
         {activeTab === 'home' && <HomeTab {...props} />}
         {activeTab === 'insert' && <InsertTab {...props} />}
+        {activeTab === 'page' && <PageTab {...props} />}
         {activeTab === 'view' && <ViewTab {...props} />}
         {activeTab === 'format' && <FormatTab {...props} />}
       </div>

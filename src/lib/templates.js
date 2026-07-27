@@ -149,7 +149,7 @@ export function approvalTemplate() {
     txt('Status: {{status}}', 20, 176, 170, 12, {
       fontSize: 13,
       fontWeight: 'bold',
-      color: '#2563eb',
+      color: '#8C2BEE',
     }),
     txt('Approver: {{approverName}}', 20, 194, 170, 10, { fontSize: 11 }),
     txt('Approver Notes\n{{approverNotes}}', 20, 210, 170, 35, {

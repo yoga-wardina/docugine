@@ -50,6 +50,11 @@
         "edit": "enter",
         "saveSnapshot": "ctrl+s"
     },
+    "deviceWarning": {
+        "enabled": true,
+        "title": "For the best experience",
+        "message": "Docugine is designed for a mouse and keyboard. You can keep going on this device, but precision editing, drag-to-resize, and the rich-text toolbar are easier with a pointer."
+    },
     "editor": {
         "quill": {
             "sizeWhitelist": [
@@ -175,7 +180,8 @@
         "historyKey": "docugine:history",
         "sessionsIndexKey": "docugine:sessions",
         "sessionPrefix": "docugine:session:",
-        "settingsKey": "docugine:settings"
+        "settingsKey": "docugine:settings",
+        "deviceWarningKey": "docugine:device-warning-dismissed"
     },
     "sampleData": {
         "invoiceNumber": "INV-001",

@@ -48,7 +48,8 @@ No TypeScript. JSX files use `.jsx`; plain modules use `.js`. Config files are J
 │   │   ├── session.js         # localStorage current/history/sessions/settings
 │   │   ├── templates.js       # Prebuilt template factories
 │   │   ├── colors.js          # Deterministic layer color
-│   │   └── useBreakpoint.js   # Responsive breakpoint hook
+│   │   ├── useBreakpoint.js   # Responsive breakpoint hook
+│   │   └── useDevice.js       # Touch-only device detection
 │   └── config/
 │       └── defaults.json      # Initial UI state (panel widths, sample data, history & session tuning, etc.)
 ├── tailwind.config.js
@@ -142,8 +143,9 @@ All components are default-exported React function components. Props flow one wa
 | `DesignCanvas` | `src/components/DesignCanvas.jsx` | Renders the A4 page, handles selection/drag/resize, embeds Quill for inline text editing | `doc`, `setDoc`, `mode`, `data`, `snapMm`, `zoom`, `editingId` |
 | `ElementList` | `src/components/ElementList.jsx` | Left "Layers" panel; click to select, shift-click to multi-select, eye icon to hide | `doc`, `setDoc`, `selectedIds`, `setSelectedIds` |
 | `PropertyPanel` | `src/components/PropertyPanel.jsx` | Right-side properties (position, size, color, font, borders, alignment, etc.) for the current selection | `selectedIds`, `doc`, `setDoc`, `editingId`, `quillRef` |
-| `PagePanel` | `src/components/PagePanel.jsx` | Right-side page settings (size, margins, watermark) | `doc`, `setDoc`, `selectedIds` |
 | `SessionPanel` | `src/components/SessionPanel.jsx` | Right-side history + saved snapshots: undo/redo, save snapshot, list, load, rename, delete | `sessions`, `canUndo`, `canRedo`, callbacks |
+| `PageTab` | `src/components/PageTab.jsx` | Toolbar "Page" tab content: margins, margin-guide style/color/show, snap-to-margin, strict-margin, watermark URL/opacity/fit | `doc`, `setDoc`, `setSelectedIds`, `onAddWatermark` |
+| `DeviceWarningDialog` | `src/components/DeviceWarningDialog.jsx` | Touch-device warning modal: "for best experience use mouse & keyboard", I-understand checkbox + Continue button; dismissal persisted to `localStorage` | `open`, `onDismiss`, `title`, `message` |
 | `DataPanel` | `src/components/DataPanel.jsx` | "Merge" mode: JSON editor for the merge-data payload + auto-detected tags | `doc`, `data`, `setData` |
 | `JsonPanel` | `src/components/JsonPanel.jsx` | "JSON" mode: view/copy/download/load the document as JSON | `doc`, `setDoc` |
 | `EditorToolbar` | `src/components/EditorToolbar.jsx` | Quill helpers (bold/italic/lists/etc.) consumed by the Format tab. Exports `StylingButtons`, `AlignmentButtons`, `ListButtons`, `TextButtons` and a `formatText/insertTagText/...` API | `quillRef` |
@@ -168,7 +170,15 @@ Initial values come from `src/config/defaults.json` (the `sampleData` keys are m
 
 ### Responsive layout
 
-`src/lib/useBreakpoint.js` returns one of `mobile` (<640px) / `tablet` (640-1023) / `desktop` (1024-1279) / `wide` (≥1280). The compact modes (`mobile` and `tablet`) collapse the side panels into overlay drawers with a backdrop; toolbar shows hamburger and panel toggle buttons. Desktop/wide keeps the resizable three-column layout. `App.js` derives `isCompact` from this and forces `leftOpen`/`rightOpen` accordingly. The Home and View tabs include a "Fit to screen" button (the `ScanLine` icon) that picks a zoom that fits the page width.
+`src/lib/useBreakpoint.js` returns one of `mobile` (<640px) / `tablet` (640-1023) / `desktop` (1024-1279) / `wide` (≥1280).
+
+| Breakpoint | Layout |
+| ---------- | ------ |
+| `mobile`   | Canvas only. Side panels are hidden entirely. The "Fit to screen" button on Home/View is the recommended way to view a page. |
+| `tablet`   | Canvas only. Side panels are hidden entirely (use `desktop` or `wide` for the full editor). |
+| `desktop` / `wide` | Resizable three-column layout: Layers (left) ‖ Canvas ‖ Properties (right). |
+
+`App.js` derives `isCompact` (`mobile` or `tablet`) and gates the side panels and resizers on `!isCompact`. Below the desktop breakpoint the layout is canvas-only with the full toolbar still available. The Home and View tabs include a "Fit to screen" button (the `ScanLine` icon) that picks a zoom that fits the page width.
 
 Persistence (`src/lib/session.js`, `src/lib/history.js`):
 
@@ -177,6 +187,7 @@ Persistence (`src/lib/session.js`, `src/lib/history.js`):
 - `docugine:sessions` — index of saved snapshots: `[{id, name, updatedAt}]`.
 - `docugine:session:{id}` — each saved snapshot: `{id, name, updatedAt, doc, history}`.
 - `docugine:settings` — reserved for future UI preferences.
+- `docugine:device-warning-dismissed` — `"1"` once the user has acknowledged the touch-device warning dialog.
 
 Auto-save runs on every `doc` change; an additional `setInterval` re-persists the doc and history tree every `defaults.session.autoSaveIntervalMs` (default 30 s).
 
@@ -252,4 +263,4 @@ There is no lint script beyond CRA's built-in ESLint (`react-app` config). `npm 
 - Watermarks are global-per-page; multi-watermark pages are stored but the UI manages only the first one.
 - Undo/redo: tree is pruned by node count, not by age or size; very large docs may lose older siblings first.
 - Sessions live entirely in `localStorage` — clearing browser data wipes both current and snapshots (see `DATA-STRUCTURE.md` for the server-side plan).
-- Responsive layout: sub-640px screens are usable but cramped. A4 at default zoom is wider than a phone, so the "Fit to screen" button (`ScanLine` icon, Home and View tabs) is the recommended way to enter edit mode on mobile.
+- Responsive layout: sub-1024px screens are usable but cramped. A4 at default zoom is wider than a phone, so the "Fit to screen" button (`ScanLine` icon, Home and View tabs) is the recommended way to enter edit mode on mobile.

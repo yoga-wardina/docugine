@@ -27,13 +27,14 @@ import {
   defaultSessionName,
 } from './lib/session';
 import { useBreakpoint } from './lib/useBreakpoint';
+import { useNeedsPointerWarning } from './lib/useDevice';
 import DesignCanvas from './components/DesignCanvas';
 import ElementList from './components/ElementList';
 import PropertyPanel from './components/PropertyPanel';
 import DataPanel from './components/DataPanel';
 import JsonPanel from './components/JsonPanel';
-import PagePanel from './components/PagePanel';
 import SessionPanel from './components/SessionPanel';
+import DeviceWarningDialog from './components/DeviceWarningDialog';
 import Toolbar from './components/Toolbar';
 import defaults from './config/defaults.json';
 
@@ -85,8 +86,24 @@ function App() {
   const [sessions, setSessions] = useState(() => listSessions());
   const breakpoint = useBreakpoint();
   const isCompact = breakpoint === 'mobile' || breakpoint === 'tablet';
-  const [leftOpen, setLeftOpen] = useState(false);
-  const [rightOpen, setRightOpen] = useState(false);
+  const isTouchOnly = useNeedsPointerWarning();
+  const [deviceWarningDismissed, setDeviceWarningDismissed] = useState(() => {
+    try {
+      return localStorage.getItem(defaults.persistence.deviceWarningKey) === '1';
+    } catch {
+      return false;
+    }
+  });
+  const showDeviceWarning =
+    defaults.deviceWarning.enabled && isTouchOnly && !deviceWarningDismissed;
+
+  function dismissDeviceWarning() {
+    setDeviceWarningDismissed(true);
+    try {
+      localStorage.setItem(defaults.persistence.deviceWarningKey, '1');
+    } catch {
+    }
+  }
 
   const historyRef = useRef(null);
   const applyingHistoryRef = useRef(false);
@@ -322,16 +339,6 @@ function App() {
     }
   }, [doc.pages.length, currentPage]);
 
-  useEffect(() => {
-    if (!isCompact) {
-      setLeftOpen(true);
-      setRightOpen(true);
-    } else {
-      setLeftOpen(false);
-      setRightOpen(false);
-    }
-  }, [isCompact]);
-
   function fitToScreen() {
     const main = document.getElementById('docugine-canvas-area');
     if (!main) return;
@@ -521,12 +528,6 @@ function App() {
               editingId={editingId}
               quillRef={quillRef}
             />
-            <PagePanel
-              doc={pageDoc}
-              setDoc={setPageDoc}
-              selectedIds={selectedIds}
-              setSelectedIds={setSelectedIds}
-            />
           </>
         )}
         {mode === 'merge' && (
@@ -539,6 +540,12 @@ function App() {
 
   return (
     <div className="flex flex-col h-screen overflow-hidden bg-brand-surfaceAlt font-sans">
+      <DeviceWarningDialog
+        open={showDeviceWarning}
+        onDismiss={dismissDeviceWarning}
+        title={defaults.deviceWarning.title}
+        message={defaults.deviceWarning.message}
+      />
       <Toolbar
         mode={mode}
         setMode={setMode}
@@ -577,6 +584,9 @@ function App() {
         onSaveSnapshot={() => doSaveSnapshot()}
         onLoadSnapshot={doLoadSnapshot}
         editingId={editingId}
+        doc={pageDoc}
+        setDoc={setPageDoc}
+        setSelectedIds={setSelectedIds}
         selectedIds={selectedIds}
         quillRef={quillRef}
         onDoneEditing={() => stopEditing(true)}
@@ -586,15 +596,11 @@ function App() {
         setShowGrid={setShowGrid}
         initialActiveTab={defaults.initialActiveTab}
         isCompact={isCompact}
-        leftOpen={leftOpen}
-        rightOpen={rightOpen}
-        onToggleLeft={() => setLeftOpen((v) => !v)}
-        onToggleRight={() => setRightOpen((v) => !v)}
         onFitToScreen={fitToScreen}
       />
 
       <main className="flex-1 flex overflow-hidden relative">
-        {!isCompact && leftOpen && (
+        {!isCompact && (
           <aside
             className="flex-shrink-0 bg-brand-surface border-r border-gray-200 overflow-y-auto p-3"
             style={{ width: leftWidth }}
@@ -608,7 +614,7 @@ function App() {
           </aside>
         )}
 
-        {!isCompact && leftOpen && <Resizer onDelta={updateLeftWidth} />}
+        {!isCompact && <Resizer onDelta={updateLeftWidth} />}
 
         <section
           id="docugine-canvas-area"
@@ -633,45 +639,12 @@ function App() {
           />
         </section>
 
-        {!isCompact && rightOpen && <Resizer onDelta={updateRightWidth} />}
+        {!isCompact && <Resizer onDelta={updateRightWidth} />}
 
-        {!isCompact && rightOpen && (
+        {!isCompact && (
           <aside
             className="flex-shrink-0 bg-brand-surface border-l border-gray-200 overflow-y-auto p-3"
             style={{ width: rightWidth }}
-          >
-            {renderRightPanel()}
-          </aside>
-        )}
-
-        {isCompact && (leftOpen || rightOpen) && (
-          <div
-            className="absolute inset-0 bg-black/30 z-10"
-            onClick={() => {
-              setLeftOpen(false);
-              setRightOpen(false);
-            }}
-          />
-        )}
-
-        {isCompact && leftOpen && (
-          <aside
-            className="absolute top-0 left-0 bottom-0 z-20 bg-brand-surface border-r border-gray-200 overflow-y-auto p-3 shadow-lg"
-            style={{ width: Math.min(280, typeof window !== 'undefined' ? window.innerWidth * 0.85 : 280) }}
-          >
-            <ElementList
-              doc={pageDoc}
-              setDoc={setPageDoc}
-              selectedIds={selectedIds}
-              setSelectedIds={setSelectedIds}
-            />
-          </aside>
-        )}
-
-        {isCompact && rightOpen && (
-          <aside
-            className="absolute top-0 right-0 bottom-0 z-20 bg-brand-surface border-l border-gray-200 overflow-y-auto p-3 shadow-lg"
-            style={{ width: Math.min(360, typeof window !== 'undefined' ? window.innerWidth * 0.9 : 360) }}
           >
             {renderRightPanel()}
           </aside>
