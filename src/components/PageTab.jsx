@@ -1,6 +1,6 @@
 import React from 'react';
 import { Droplet, X, ArrowUp, ArrowDown } from 'lucide-react';
-import { newWatermarkElement, defaultHeader, defaultFooter } from '../lib/document';
+import { defaultHeader, defaultFooter } from '../utils/document';
 
 const ico = { size: 14, strokeWidth: 2 };
 
@@ -45,7 +45,7 @@ function NumField({ value, onChange, min = 0, step = 1, label }) {
   );
 }
 
-export default function PageTab({ doc, setDoc, setSelectedIds, onAddWatermark }) {
+export default function PageTab({ doc, actions }) {
   const layout = doc.page.layout || {
     margins: { top: 20, right: 20, bottom: 20, left: 20 },
     marginGuideStyle: 'dotted',
@@ -61,134 +61,35 @@ export default function PageTab({ doc, setDoc, setSelectedIds, onAddWatermark })
   const watermark = watermarks[0];
 
   function updateLayout(patch) {
-    setDoc((prev) => {
-      const currentLayout = prev.page?.layout || layout;
-      return {
-        ...prev,
-        page: { ...prev.page, layout: { ...currentLayout, ...patch } },
-      };
-    });
+    actions.patchLayout(patch);
   }
 
   function updateMargins(patch) {
-    setDoc((prev) => {
-      const currentLayout = prev.page?.layout || layout;
-      const currentMargins = currentLayout.margins || layout.margins;
-      const next = { ...currentMargins, ...patch };
-      const currentHeader = prev.page?.header || header;
-      const currentFooter = prev.page?.footer || footer;
-      if (currentHeader.enabled && patch.top !== undefined) {
-        next.top = Math.max(patch.top, currentHeader.height || 0);
-      }
-      if (currentFooter.enabled && patch.bottom !== undefined) {
-        next.bottom = Math.max(patch.bottom, currentFooter.height || 0);
-      }
-      return {
-        ...prev,
-        page: {
-          ...prev.page,
-          layout: { ...currentLayout, margins: next },
-        },
-      };
-    });
+    actions.patchMargins(patch);
   }
 
   function updateHeader(patch) {
-    setDoc((prev) => {
-      const currentHeader = prev.page?.header || defaultHeader();
-      const nextHeader = { ...currentHeader, ...patch };
-      const currentLayout = prev.page?.layout || layout;
-      const currentFooter = prev.page?.footer || footer;
-      let nextLayout = currentLayout;
-      if (nextHeader.enabled) {
-        const need = nextHeader.height || 0;
-        if ((currentLayout.margins?.top ?? 0) < need) {
-          nextLayout = {
-            ...currentLayout,
-            margins: {
-              ...(currentLayout.margins || layout.margins),
-              top: need,
-            },
-          };
-        }
-      }
-      return {
-        ...prev,
-        page: {
-          ...prev.page,
-          header: nextHeader,
-          layout: nextLayout,
-          footer: currentFooter,
-        },
-      };
-    });
+    actions.patchHeader(patch);
   }
 
   function updateFooter(patch) {
-    setDoc((prev) => {
-      const currentFooter = prev.page?.footer || defaultFooter();
-      const nextFooter = { ...currentFooter, ...patch };
-      const currentLayout = prev.page?.layout || layout;
-      const currentHeader = prev.page?.header || header;
-      let nextLayout = currentLayout;
-      if (nextFooter.enabled) {
-        const need = nextFooter.height || 0;
-        if ((currentLayout.margins?.bottom ?? 0) < need) {
-          nextLayout = {
-            ...currentLayout,
-            margins: {
-              ...(currentLayout.margins || layout.margins),
-              bottom: need,
-            },
-          };
-        }
-      }
-      return {
-        ...prev,
-        page: {
-          ...prev.page,
-          footer: nextFooter,
-          layout: nextLayout,
-          header: currentHeader,
-        },
-      };
-    });
+    actions.patchFooter(patch);
   }
 
   function addWatermark() {
-    if (onAddWatermark) {
-      onAddWatermark();
-      return;
-    }
-    const el = newWatermarkElement(55, 100);
-    setDoc((prev) => ({ ...prev, elements: [...prev.elements, el] }));
-    setSelectedIds?.([el.id]);
+    actions.addWatermark();
   }
 
   function removeWatermark() {
-    setDoc((prev) => ({
-      ...prev,
-      elements: prev.elements.filter((el) => el.type !== 'watermark'),
-    }));
-    setSelectedIds?.([]);
+    actions.removeWatermark();
   }
 
   function updateWatermark(patch) {
-    setDoc((prev) => ({
-      ...prev,
-      elements: prev.elements.map((el) =>
-        el.type === 'watermark' ? { ...el, ...patch } : el
-      ),
-    }));
+    actions.patchWatermark(patch);
   }
 
   function updateWatermarkStyle(patch) {
-    setDoc((prev) => ({
-      ...prev,
-      elements: prev.elements.map((el) =>
-        el.type === 'watermark' ? { ...el, style: { ...el.style, ...patch } } : el
-      ),
-    }));
+    actions.patchWatermarkStyle(patch);
   }
 
   return (

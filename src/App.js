@@ -1,24 +1,12 @@
 import React, { useCallback, useEffect, useReducer, useRef, useState } from 'react';
-import {
-  defaultDocument,
-  defaultLayout,
-  defaultHeader,
-  defaultFooter,
-  newElement,
-  newHeadingElement,
-  newSignatureTemplate,
-  newWatermarkElement,
-  newId,
-  importDocument,
-  MM_TO_PX,
-} from './lib/document';
-import { TEMPLATES } from './lib/templates';
+import { defaultDocument, importDocument, MM_TO_PX } from './utils/document';
+import { TEMPLATES } from './utils/templates';
 import {
   createHistory,
   loadHistory,
   saveHistory,
   restoreHistory,
-} from './lib/history';
+} from './utils/history';
 import {
   saveCurrent,
   loadCurrent,
@@ -30,9 +18,11 @@ import {
   defaultSessionName,
   saveMergeData,
   loadMergeData,
-} from './lib/session';
-import { useBreakpoint } from './lib/useBreakpoint';
-import { useNeedsPointerWarning } from './lib/useDevice';
+} from './utils/session';
+import { useBreakpoint } from './utils/useBreakpoint';
+import { useNeedsPointerWarning } from './utils/useDevice';
+import { useDocumentActions } from './utils/actions/useDocumentActions';
+import { deleteElements } from './utils/actions/elementActions';
 import DesignCanvas from './components/DesignCanvas';
 import ElementList from './components/ElementList';
 import PropertyPanel from './components/PropertyPanel';
@@ -273,6 +263,22 @@ function App() {
     [editingId, quillRef, setPageDoc]
   );
 
+  const actions = useDocumentActions({
+    setDoc,
+    setPageDoc,
+    setAllPagesDoc,
+    currentPage,
+    pageDoc,
+    setSelectedIds,
+    setMode,
+    setCurrentPage,
+    setZoom,
+    historyRef,
+    applyingHistoryRef,
+    bumpHistory,
+    defaults,
+  });
+
   useEffect(() => {
     setEditingId(null);
   }, [currentPage]);
@@ -412,16 +418,10 @@ function App() {
 
       if (e.key === 'Delete' || e.key === 'Backspace') {
         if (selectedIds.length > 0) {
-          setDoc((prev) => {
-            const pages = [...prev.pages];
-            pages[currentPage] = {
-              ...pages[currentPage],
-              elements: pages[currentPage].elements.filter(
-                (el) => !selectedIds.includes(el.id)
-              ),
-            };
-            return { ...prev, pages };
-          });
+          setPageDoc((prev) => ({
+            ...prev,
+            elements: deleteElements(prev.elements, selectedIds),
+          }));
           setSelectedIds([]);
         }
       } else if (e.key === 'Escape') {
@@ -431,89 +431,15 @@ function App() {
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [selectedIds, currentPage, doUndo, doRedo, doSaveSnapshot]);
+  }, [selectedIds, currentPage, setPageDoc, doUndo, doRedo, doSaveSnapshot]);
 
-  function nextOffset() {
-    return 20 + (pageDoc.elements.length % 5) * 5;
-  }
-
-  function addElement(type) {
-    const offset = nextOffset();
-    const el = newElement(type, offset, offset);
-    setPageDoc((prev) => ({ ...prev, elements: [...prev.elements, el] }));
-    setSelectedIds([el.id]);
-    setMode('design');
-  }
-
-  function addHeading() {
-    const offset = nextOffset();
-    const el = newHeadingElement(offset, offset);
-    setPageDoc((prev) => ({ ...prev, elements: [...prev.elements, el] }));
-    setSelectedIds([el.id]);
-    setMode('design');
-  }
-
-  function addSignature() {
-    const offset = nextOffset();
-    const elements = newSignatureTemplate(offset, offset + 8);
-    setPageDoc((prev) => ({ ...prev, elements: [...prev.elements, ...elements] }));
-    setSelectedIds(elements.map((el) => el.id));
-    setMode('design');
-  }
-
-  function addWatermark() {
-    const el = newWatermarkElement(55, 100);
-    setAllPagesDoc((prev) => {
-      if (prev.elements.some((it) => it.type === 'watermark')) return prev;
-      return { ...prev, elements: [...prev.elements, { ...el, id: newId() }] };
-    });
-    setSelectedIds([el.id]);
-    setMode('design');
-  }
-
-  function addPage() {
-    setDoc((prev) => {
-      const src = prev.pages[currentPage] || {
-        page: { layout: defaultLayout() },
-        elements: [],
-      };
-      const srcPage = src.page || {};
-      const watermark = (src.elements || []).filter((el) => el.type === 'watermark');
-      return {
-        ...prev,
-        pages: [
-          ...prev.pages,
-          {
-            page: {
-              width: defaults.canvas.pageWidth,
-              height: defaults.canvas.pageHeight,
-              unit: defaults.canvas.pageUnit,
-              layout: { ...(srcPage.layout || defaultLayout()) },
-              header: { ...(srcPage.header || defaultHeader()) },
-              footer: { ...(srcPage.footer || defaultFooter()) },
-            },
-            elements: watermark.map((w) => ({ ...w, id: newId() })),
-          },
-        ],
-      };
-    });
-    setCurrentPage((prev) => prev + 1);
-    setSelectedIds([]);
-    setMode('design');
-  }
-
-  function deletePage() {
+  function confirmDeletePage() {
     if (doc.pages.length <= 1) return;
     if (!window.confirm('Delete the current page?')) return;
-    setDoc((prev) => {
-      const pages = prev.pages.filter((_, i) => i !== currentPage);
-      return { ...prev, pages };
-    });
-    setCurrentPage((prev) => Math.max(0, prev - 1));
-    setSelectedIds([]);
+    actions.deletePage();
   }
 
-  function loadTemplate(key) {
+  function confirmLoadTemplate(key) {
     const template = TEMPLATES[key];
     if (!template) return;
     if (
@@ -521,30 +447,13 @@ function App() {
         `Load the ${template.label} template? This will replace your current document.`
       )
     ) {
-      setDoc(template.factory());
-      setCurrentPage(0);
-      setSelectedIds([]);
-      setMode('design');
-      setZoom(1);
+      actions.loadTemplate(template);
     }
   }
 
-  function resetTemplate() {
+  function confirmReset() {
     if (window.confirm('Reset to the default template?')) {
-      const fresh = defaultDocument();
-      applyingHistoryRef.current = true;
-      setDoc(fresh);
-      historyRef.current = createHistory(fresh, {
-        maxNodes: defaults.history.maxNodes,
-      });
-      saveHistory(historyRef.current);
-      setCurrentPage(0);
-      setSelectedIds([]);
-      setZoom(1);
-      bumpHistory();
-      Promise.resolve().then(() => {
-        applyingHistoryRef.current = false;
-      });
+      actions.resetTemplate();
     }
   }
 
@@ -555,7 +464,7 @@ function App() {
           <>
             <PropertyPanel
               doc={pageDoc}
-              setDoc={setPageDoc}
+              actions={actions}
               selectedIds={selectedIds}
               setSelectedIds={setSelectedIds}
               editingId={editingId}
@@ -613,15 +522,15 @@ function App() {
           setCurrentPage((p) => Math.min(doc.pages.length - 1, p + 1));
           setSelectedIds([]);
         }}
-        onAddPage={addPage}
-        onDeletePage={deletePage}
-        onAddElement={addElement}
-        onAddHeading={addHeading}
-        onAddSignature={addSignature}
-        onAddWatermark={addWatermark}
+        onAddPage={actions.addPage}
+        onDeletePage={confirmDeletePage}
+        onAddElement={actions.addElement}
+        onAddHeading={actions.addHeading}
+        onAddSignature={actions.addSignature}
+        onAddWatermark={actions.addWatermark}
         templates={TEMPLATES}
-        onLoadTemplate={loadTemplate}
-        onReset={resetTemplate}
+        onLoadTemplate={confirmLoadTemplate}
+        onReset={confirmReset}
         onUndo={doUndo}
         onRedo={doRedo}
         canUndo={history.canUndo()}
@@ -635,6 +544,7 @@ function App() {
         selectedIds={selectedIds}
         quillRef={quillRef}
         onDoneEditing={() => stopEditing(true)}
+        actions={actions}
         showGuides={showGuides}
         setShowGuides={setShowGuides}
         showGrid={showGrid}
@@ -652,7 +562,7 @@ function App() {
           >
             <ElementList
               doc={pageDoc}
-              setDoc={setPageDoc}
+              actions={actions}
               selectedIds={selectedIds}
               setSelectedIds={setSelectedIds}
             />

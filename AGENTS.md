@@ -42,14 +42,19 @@ No TypeScript. JSX files use `.jsx`; plain modules use `.js`. Config files are J
 │   ├── reportWebVitals.js
 │   ├── logo.svg
 │   ├── components/            # All UI (see §6)
-│   ├── lib/                   # Pure helpers, framework-free (see §5)
+│   ├── utils/                 # Pure helpers, framework-free (see §5)
 │   │   ├── document.js        # Document model + factories + I/O
 │   │   ├── history.js         # Undo-tree (branches on undo+edit)
 │   │   ├── session.js         # localStorage current/history/sessions/settings
 │   │   ├── templates.js       # Prebuilt template factories
 │   │   ├── colors.js          # Deterministic layer color
 │   │   ├── useBreakpoint.js   # Responsive breakpoint hook
-│   │   └── useDevice.js       # Touch-only device detection
+│   │   ├── useDevice.js       # Touch-only device detection
+│   │   └── actions/           # Document mutations, isolated from the UI layer
+│   │       ├── elementActions.js     # Pure element-level mutations (patch, delete, moveZ, …)
+│   │       ├── pageActions.js        # Pure page-level mutations (layout, header, footer, watermark, add element)
+│   │       ├── docActions.js         # Pure doc-level mutations (append/remove page, replace doc, add watermark to all pages)
+│   │       └── useDocumentActions.js # Hook that wires the action helpers to setDoc/setPageDoc/setAllPagesDoc
 │   └── config/
 │       └── defaults.json      # Initial UI state (panel widths, sample data, history & session tuning, etc.)
 ├── tailwind.config.js
@@ -59,7 +64,7 @@ No TypeScript. JSX files use `.jsx`; plain modules use `.js`. Config files are J
 
 ## 4. Core domain: the Document model
 
-Defined in `src/lib/document.js`. This is the single source of truth for the data shape.
+Defined in `src/utils/document.js`. This is the single source of truth for the data shape.
 
 ```ts
 type Document = {
@@ -113,7 +118,7 @@ Key invariants:
 - `page.header` and `page.footer` are **page-level bands** (not elements). When enabled, they reserve `height` mm at the top/bottom of the page; `PageTab` clamps the top/bottom margin to be ≥ the band height, and `DesignCanvas` excludes the band area from the strict-margin content region (same behavior as the existing strict-margin clamp).
 - **Page-level settings are document-wide.** Layout, header, footer, and watermark are shared across all pages of a document: changes from the *Page* tab (or the Insert → Watermark button) are applied to every page through `setAllPagesDoc`, and a new page created via *Add page* inherits the current page's layout, header, footer, and watermark. The remaining elements (text, rect, image, line) stay per-page.
 
-### Document lifecycle helpers (in `src/lib/document.js`)
+### Document lifecycle helpers (in `src/utils/document.js`)
 
 | Export | Purpose |
 | ------ | ------- |
@@ -133,6 +138,19 @@ Key invariants:
 
 `importDocument` is **lenient**: it fills missing fields with defaults, so older or partial JSON still loads.
 
+### Document mutation helpers (in `src/utils/actions/`)
+
+The single-page app keeps all document-mutating logic out of the UI layer. There are three layers of pure functions plus one React hook. Each function takes the current state (or relevant slice) and returns a new state — no React, no side effects.
+
+| File | Layer | Exports |
+| ---- | ----- | ------- |
+| `src/utils/actions/elementActions.js` | element | `patchElement`, `patchElementStyle`, `deleteElement`, `deleteElements`, `moveElementZ`, `toggleElementHidden`, `toggleBorderSide` |
+| `src/utils/actions/pageActions.js`    | page    | `addElementToPage`, `addElementsToPage`, `nextInsertOffset`, `patchLayout`, `patchMargins`, `patchHeader`, `patchFooter`, `removeWatermarkFromPage`, `patchWatermarkOnPage`, `patchWatermarkStyleOnPage` |
+| `src/utils/actions/docActions.js`     | doc     | `appendPage`, `removePageAt`, `replaceDoc`, `addWatermarkToAllPages` |
+| `src/utils/actions/useDocumentActions.js` | hook | `useDocumentActions({ setDoc, setPageDoc, setAllPagesDoc, currentPage, pageDoc, setSelectedIds, setMode, setCurrentPage, setZoom, historyRef, applyingHistoryRef, bumpHistory, defaults })` → returns the `actions` object consumed by `App.js`, `Toolbar`, `PageTab`, `PropertyPanel`, and `ElementList` |
+
+The hook is the only place that touches React state. It memoizes every callback with `useCallback` and wraps the pure helpers in `setDoc` / `setPageDoc` / `setAllPagesDoc` updaters. Panels (PageTab, PropertyPanel, ElementList) receive the `actions` object as a prop and call `actions.foo(...)` instead of building their own `setDoc((prev) => ...)` updaters.
+
 ## 5. Element types & their `style` keys
 
 | `type`     | `content`            | `style` keys of interest |
@@ -143,7 +161,7 @@ Key invariants:
 | `line`     | (unused)             | `lineColor` (rendered as `backgroundColor`), `rotation` (deg) |
 | `watermark`| image URL            | `opacity` (default 0.15), `objectFit` |
 
-`src/lib/colors.js → getLayerColor(id)` returns a deterministic HSL color per element id; used for the layer outline while dragging.
+`src/utils/colors.js → getLayerColor(id)` returns a deterministic HSL color per element id; used for the layer outline while dragging.
 
 ## 6. Component map
 
@@ -183,7 +201,7 @@ Initial values come from `src/config/defaults.json` (the `sampleData` keys are m
 
 ### Responsive layout
 
-`src/lib/useBreakpoint.js` returns one of `mobile` (<640px) / `tablet` (640-1023) / `desktop` (1024-1279) / `wide` (≥1280).
+`src/utils/useBreakpoint.js` returns one of `mobile` (<640px) / `tablet` (640-1023) / `desktop` (1024-1279) / `wide` (≥1280).
 
 | Breakpoint | Layout |
 | ---------- | ------ |
@@ -193,7 +211,7 @@ Initial values come from `src/config/defaults.json` (the `sampleData` keys are m
 
 `App.js` derives `isCompact` (`mobile` or `tablet`) and gates the side panels and resizers on `!isCompact`. Below the desktop breakpoint the layout is canvas-only with the full toolbar still available. The Home and View tabs include a "Fit to screen" button (the `ScanLine` icon) that picks a zoom that fits the page width.
 
-Persistence (`src/lib/session.js`, `src/lib/history.js`):
+Persistence (`src/utils/session.js`, `src/utils/history.js`):
 
 - `docugine:current` — the active document (replaces the old `docugine:template` key; legacy key is still read on first load).
 - `docugine:history` — the serialized undo-tree for the active document.
@@ -215,7 +233,7 @@ Keyboard shortcuts (global, installed in `App.js`):
 
 ## 7a. Undo tree
 
-Implemented in `src/lib/history.js`. Every `doc` change is committed through a debounced effect (`defaults.history.commitDebounceMs`, default 250 ms) so a drag is one node, not fifty. The tree supports branches: undo then edit creates a sibling; redo follows the most-recent child. The tree is pruned to `defaults.history.maxNodes` (default 200) by dropping the oldest off-path leaves first, so the current undo path is always preserved. `App.js` exposes a `applyingHistoryRef` flag so state changes from undo/redo don't re-commit.
+Implemented in `src/utils/history.js`. Every `doc` change is committed through a debounced effect (`defaults.history.commitDebounceMs`, default 250 ms) so a drag is one node, not fifty. The tree supports branches: undo then edit creates a sibling; redo follows the most-recent child. The tree is pruned to `defaults.history.maxNodes` (default 200) by dropping the oldest off-path leaves first, so the current undo path is always preserved. `App.js` exposes a `applyingHistoryRef` flag so state changes from undo/redo don't re-commit.
 
 ## 8. Run / build / test
 
@@ -241,28 +259,28 @@ There is no lint script beyond CRA's built-in ESLint (`react-app` config). `npm 
 - **`setPageDoc`** is a memoized updater scoped to the current page (`doc.pages[currentPage]`). Prefer it over re-writing the whole document when the change is page-local.
 - **Selection state** is an array (`selectedIds`) so multi-select works; some panels (`PropertyPanel`) show a simplified view when length !== 1.
 - **Inline text editing** uses a single shared `quillRef` on `App`. Only one element edits at a time; the Format tab appears automatically while `editingId` is set.
-- **Templates** are factories in `src/lib/templates.js`. New built-in templates go in the `TEMPLATES` map at the bottom; each value is `{ label, factory }` where `factory()` returns a full `Document`.
+- **Templates** are factories in `src/utils/templates.js`. New built-in templates go in the `TEMPLATES` map at the bottom; each value is `{ label, factory }` where `factory()` returns a full `Document`.
 - **`localStorage` may be unavailable** (private mode, quota). All reads/writes are wrapped in `try/catch`; don't add code that crashes on storage failure.
-- **Pure helpers belong in `src/lib/`**, not inside components. The document model, templates, and color helpers are intentionally framework-free so they can be unit-tested or reused.
-- **Imports are absolute-ish**: components import the lib as `'../lib/document'`. Keep that style.
+- **Pure helpers belong in `src/utils/`**, not inside components. The document model, templates, and color helpers are intentionally framework-free so they can be unit-tested or reused.
+- **Imports are absolute-ish**: components import the utils as `'../utils/document'`. Keep that style.
 
 ## 10. Common tasks for an agent
 
 - **Add a new element type** (e.g. `circle`):
-  1. Add the type to `newElement()` in `src/lib/document.js` with default `content`/`style`.
+  1. Add the type to `newElement()` in `src/utils/document.js` with default `content`/`style`.
   2. Add a renderer branch in `DesignCanvas.toCssStyle` and the element body.
   3. Add an "Insert" button in `Toolbar.jsx → InsertTab` calling `onAddElement('circle')`.
   4. Extend `PropertyPanel` to show relevant fields when the selection is of that type.
   5. Update §5 of this file.
 
 - **Add a new built-in template**:
-  1. **Code-defined** (the existing pattern): write a factory in `src/lib/templates.js` returning `baseDoc([…])` and register it in the `TEMPLATES` object.
-  2. **JSON-defined** (recommended for long / hand-edited templates): drop a `Document`-shaped JSON file in `src/config/templates/` (the file's basename becomes the template key, and the label is auto-derived from the filename — `offer-letter.json` → "Offer Letter"). Add one import + one `TEMPLATES[…]` line at the bottom of `src/lib/templates.js`. The factory is `makeJsonTemplate(imported)` and runs the JSON through `importDocument()` so missing `header` / `footer` / `layout` fields are filled in.
+  1. **Code-defined** (the existing pattern): write a factory in `src/utils/templates.js` returning `baseDoc([…])` and register it in the `TEMPLATES` object.
+  2. **JSON-defined** (recommended for long / hand-edited templates): drop a `Document`-shaped JSON file in `src/config/templates/` (the file's basename becomes the template key, and the label is auto-derived from the filename — `offer-letter.json` → "Offer Letter"). Add one import + one `TEMPLATES[…]` line at the bottom of `src/utils/templates.js`. The factory is `makeJsonTemplate(imported)` and runs the JSON through `importDocument()` so missing `header` / `footer` / `layout` fields are filled in.
   3. Either way, no UI changes are required — the toolbar's `Templates` group reads from `TEMPLATES` and renders a thumbnail preview for each entry via `TemplatePreviewButton`.
 
-- **Add a new merge tag feature** (e.g. nested lookups): change `mergeTags` and `findTags` in `src/lib/document.js`. Update `DataPanel` only if the UI needs to surface it.
+- **Add a new merge tag feature** (e.g. nested lookups): change `mergeTags` and `findTags` in `src/utils/document.js`. Update `DataPanel` only if the UI needs to surface it.
 
-- **Wire a new history/session action**: add it to `src/lib/history.js` (or `session.js`), then expose it through `App.js` (memoized via `useCallback`) and pass it down to `Toolbar` / `SessionPanel`. Remember to gate keyboard shortcuts on `isEditableTarget(e.target)` so typing in inputs/Quill doesn't fire them.
+- **Wire a new history/session action**: add it to `src/utils/history.js` (or `session.js`), then expose it through `App.js` (memoized via `useCallback`) and pass it down to `Toolbar` / `SessionPanel`. Remember to gate keyboard shortcuts on `isEditableTarget(e.target)` so typing in inputs/Quill doesn't fire them.
 
 - **Persist additional UI state** (e.g. zoom): keep state in `App.js` and add it to `defaults.json`. Don't write a new localStorage key without a migration story.
 

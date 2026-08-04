@@ -20,8 +20,8 @@ import {
   defaultLayout,
   defaultHeader,
   defaultFooter,
-} from '../lib/document';
-import { getLayerColor } from '../lib/colors';
+} from '../utils/document';
+import { getLayerColor } from '../utils/colors';
 
 const SizeStyle = Quill.import('attributors/style/size');
 SizeStyle.whitelist = [

@@ -1,5 +1,5 @@
 import React from 'react';
-import { findTags } from '../lib/document';
+import { findTags } from '../utils/document';
 
 const inputCls =
   'border border-gray-300 rounded-md px-2 py-1.5 text-sm text-gray-900 bg-white w-full focus:outline-none focus:border-brand-accent focus:ring-2 focus:ring-brand-accent/20';

@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { exportDocument, importDocument } from '../lib/document';
+import { exportDocument, importDocument } from '../utils/document';
 
 export default function JsonPanel({ doc, setDoc }) {
   const [text, setText] = useState(() => exportDocument(doc));

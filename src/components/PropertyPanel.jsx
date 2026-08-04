@@ -18,7 +18,7 @@ function ptToClosestPx(pt) {
 
 export default function PropertyPanel({
   doc,
-  setDoc,
+  actions,
   selectedIds,
   setSelectedIds,
   editingId,
@@ -45,13 +45,7 @@ export default function PropertyPanel({
         <button
           className="bg-brand-danger text-white border-none rounded-md px-3 py-1.5 text-sm font-medium cursor-pointer hover:bg-brand-dangerDark"
           onClick={() => {
-            setDoc((prev) => ({
-              ...prev,
-              elements: prev.elements.filter(
-                (el) => !selectedIds.includes(el.id)
-              ),
-            }));
-            setSelectedIds([]);
+            actions.deleteSelected(selectedIds);
           }}
         >
           Delete selected
@@ -64,42 +58,19 @@ export default function PropertyPanel({
   const element = selectedElements[0];
 
   function update(patch) {
-    setDoc((prev) => ({
-      ...prev,
-      elements: prev.elements.map((el) =>
-        el.id === selectedId ? { ...el, ...patch } : el
-      ),
-    }));
+    actions.patchElement(selectedId, patch);
   }
 
   function updateStyle(patch) {
-    setDoc((prev) => ({
-      ...prev,
-      elements: prev.elements.map((el) =>
-        el.id === selectedId ? { ...el, style: { ...el.style, ...patch } } : el
-      ),
-    }));
+    actions.patchElementStyle(selectedId, patch);
   }
 
   function deleteElement() {
-    setDoc((prev) => ({
-      ...prev,
-      elements: prev.elements.filter((el) => el.id !== selectedId),
-    }));
-    setSelectedIds([]);
+    actions.deleteElement(selectedId);
   }
 
   function moveZ(delta) {
-    setDoc((prev) => {
-      const elements = [...prev.elements];
-      const idx = elements.findIndex((el) => el.id === selectedId);
-      if (idx === -1) return prev;
-      const newIdx = Math.max(0, Math.min(elements.length - 1, idx + delta));
-      if (newIdx === idx) return prev;
-      const [el] = elements.splice(idx, 1);
-      elements.splice(newIdx, 0, el);
-      return { ...prev, elements };
-    });
+    actions.moveZ(selectedId, delta);
   }
 
   const style = element.style || {};
@@ -111,9 +82,7 @@ export default function PropertyPanel({
   };
 
   function toggleBorderSide(side) {
-    updateStyle({
-      borderSides: { ...borderSides, [side]: !borderSides[side] },
-    });
+    actions.toggleBorderSide(selectedId, side, borderSides);
   }
 
   // Scope-aware text helpers: apply to Quill selection when the text editor

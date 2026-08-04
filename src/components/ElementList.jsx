@@ -7,20 +7,11 @@ const ico = { size: 14, strokeWidth: 2 };
 
 export default function ElementList({
   doc,
-  setDoc,
+  actions,
   selectedIds,
   setSelectedIds,
 }) {
   const [multiSelect, setMultiSelect] = useState(false);
-
-  function toggleVisibility(id) {
-    setDoc((prev) => ({
-      ...prev,
-      elements: prev.elements.map((el) =>
-        el.id === id ? { ...el, hidden: !el.hidden } : el
-      ),
-    }));
-  }
 
   function handleSelect(id, e) {
     const additive = multiSelect || e?.shiftKey || e?.metaKey || e?.ctrlKey;
@@ -115,7 +106,7 @@ export default function ElementList({
                   className="inline-flex items-center justify-center text-gray-600 hover:text-gray-900 bg-transparent border-none rounded cursor-pointer touch-manipulation p-2 -mr-2 min-w-[40px] min-h-[40px]"
                   onClick={(e) => {
                     e.stopPropagation();
-                    toggleVisibility(el.id);
+                    actions.toggleHidden(el.id);
                   }}
                 >
                   {el.hidden ? <Eye {...ico} /> : <EyeOff {...ico} />}
