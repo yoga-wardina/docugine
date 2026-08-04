@@ -1,70 +1,52 @@
-# Getting Started with Create React App
+# Docugine
 
-This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
+A browser-based A4 document template designer. Compose multi-page A4 templates by placing elements on a canvas, edit text inline with Quill, insert `{{tag}}` placeholders that are merged with a JSON data payload, and export the whole document as JSON.
 
-## Available Scripts
+## Quick start
 
-In the project directory, you can run:
+```bash
+npm install            # one-time
+npm start              # dev server on http://localhost:3000
+npm test               # Jest in watch mode (react-scripts test)
+npm run build          # production build into ./build
+```
 
-### `npm start`
+See [AGENTS.md](./AGENTS.md) for the full developer guide and [DATA-STRUCTURE.md](./DATA-STRUCTURE.md) for storage plans.
 
-Runs the app in the development mode.\
-Open [http://localhost:3000](http://localhost:3000) to view it in your browser.
+## KERAPIAN
+### Penamaan
+    - gunakan lowrcase kebab-case untuk file & folder:  kebab-case-for-file.tx
+    - gunakan lowercase snake_case untuk variable: const variabel_baru = 0;
+    - gunakan CamelCase dan arrow function untuk penamaan fungsi atau hooks: const FungsiBaru = () => {};
+### Organisasi Kode
+    src/
+    ├── App.js                      # Top-level component, owns state
+    ├── App.test.js                 # Smoke test
+    ├── index.js                    # React root
+    ├── index.css                   # Tailwind directives + global CSS
+    ├── config/                     # konfigurasi default / default value
+    ├── components/                 # All UI (Toolbar, panels, DesignCanvas, …)
+    └── utils/                      # framework-free helpers
+        ├── document.js             # Document model + factories + I/O
+        ├── history.js              # Undo-tree
+        ├── session.js              # localStorage current/history/sessions
+        ├── templates.js            # Prebuilt template factories
+        ├── colors.js               # Deterministic layer color
+        ├── useBreakpoint.js        # Responsive breakpoint hook
+        ├── useDevice.js            # Touch-only device detection
+        ├── actions/                # Semua fungsi yang melakukan mutasi terhadap dokumen
+        │   ├── elementActions.js   #   pure element-level mutations
+        │   ├── pageActions.js      #   pure page-level mutations
+        │   ├── docActions.js       #   pure doc-level mutations
+        │   └── useDocumentActions.js # hook wiring the above to React state
+        └── http/                   # Semua Http call di handle disini
 
-The page will reload when you make changes.\
-You may also see any lint errors in the console.
-
-### `npm test`
-
-Launches the test runner in the interactive watch mode.\
-See the section about [running tests](https://facebook.github.io/create-react-app/docs/running-tests) for more information.
-
-### `npm run build`
-
-Builds the app for production to the `build` folder.\
-It correctly bundles React in production mode and optimizes the build for the best performance.
-
-The build is minified and the filenames include the hashes.\
-Your app is ready to be deployed!
-
-See the section about [deployment](https://facebook.github.io/create-react-app/docs/deployment) for more information.
-
-### `npm run eject`
-
-**Note: this is a one-way operation. Once you `eject`, you can't go back!**
-
-If you aren't satisfied with the build tool and configuration choices, you can `eject` at any time. This command will remove the single build dependency from your project.
-
-Instead, it will copy all the configuration files and the transitive dependencies (webpack, Babel, ESLint, etc) right into your project so you have full control over them. All of the commands except `eject` will still work, but they will point to the copied scripts so you can tweak them. At this point you're on your own.
-
-You don't have to ever use `eject`. The curated feature set is suitable for small and middle deployments, and you shouldn't feel obligated to use this feature. However we understand that this tool wouldn't be useful if you couldn't customize it when you are ready for it.
-
-## Learn More
-
-You can learn more in the [Create React App documentation](https://facebook.github.io/create-react-app/docs/getting-started).
-
-To learn React, check out the [React documentation](https://reactjs.org/).
-
-### Code Splitting
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/code-splitting](https://facebook.github.io/create-react-app/docs/code-splitting)
-
-### Analyzing the Bundle Size
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size](https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size)
-
-### Making a Progressive Web App
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app](https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app)
-
-### Advanced Configuration
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/advanced-configuration](https://facebook.github.io/create-react-app/docs/advanced-configuration)
-
-### Deployment
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/deployment](https://facebook.github.io/create-react-app/docs/deployment)
-
-### `npm run build` fails to minify
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify](https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify)
+## EFFISIENSI
+    - Jangan mencampurkan UI dan core jadi satu file.
+    - File UI atau yang berhubungan dengan tampilan disimpan dalam components.
+    - File halaman atau page hanya berisi hooks seperti state, useEffect, dsb.
+    - Jika fungsi melakukan mutasi atau aksi pada dokumen seperti (menambahkan elemen, merubah margin, dll) maka fungsi harus disimpan dalam utils/actions/
+    - Jika fungsi berupa hal yang general atau berupa hooks seperti (penyimpanan sesi, template dokumen & elemen, hooks, zustand storage, dll) disimpan dalam utils/
+    - folder config/ berisi konfigurasi default atau default value yang akan di gunakan dalam applikasi seperti (margin, headings, font-size, dll) hindari menulis default state atau default value (yang dapat di mutasi) pada file kode secara langsung
+    - folder utils/http/ berisi konfigurasi http (axios) dan semua http api call (gunakan tipe yang kongkrit) jangan menggunakan seperti Record<generic, generic>[] bentuk data return harus sesuai dengan apa yang di return dari API.
+    - gunakan Class component (OOP like) untuk semua utilitas HTTP.
